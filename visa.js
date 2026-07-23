@@ -1,60 +1,99 @@
 // Gestión de Trámite de Visas — módulo de backend.
-// Almacenamiento simple en archivos JSON (mismo patrón que el resto de la app),
-// sin base de datos externa. Módulo aparte para no inflar server.js.
+// Almacenamiento en Postgres (Supabase u otro proveedor) vía DATABASE_URL,
+// para que los datos sobrevivan a los redeploys. Módulo aparte para no
+// inflar server.js.
 
 const express = require('express');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
+const contentDisposition = require('content-disposition');
+const { pool } = require('./db');
 const { SECTIONS, DOCUMENT_CATEGORIES, STATUS_OPTIONS } = require('./visa-schema');
 
-const DATA_DIR = path.join(__dirname, 'data');
-const UPLOADS_DIR = path.join(DATA_DIR, 'visa-uploads');
-const USERS_FILE = path.join(DATA_DIR, 'visa-users.json');
-const TOKENS_FILE = path.join(DATA_DIR, 'visa-tokens.json');
-const FORMS_FILE = path.join(DATA_DIR, 'visa-forms.json');
-const DOCS_FILE = path.join(DATA_DIR, 'visa-docs.json');
-const STATUS_FILE = path.join(DATA_DIR, 'visa-status.json');
-
 const DEFAULT_STATUS = STATUS_OPTIONS[0].value;
-
 const ADMIN_EMAIL = (process.env.VISA_ADMIN_EMAIL || 'luisrangel2507@gmail.com').toLowerCase();
 
-for (const dir of [DATA_DIR, UPLOADS_DIR]) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+function wrap(fn) {
+  return (req, res) => {
+    fn(req, res).catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: 'Error de servidor' });
+    });
+  };
 }
 
-function loadJSON(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch (e) { return fallback; }
+// ── Acceso a datos ───────────────────────────────────────────────────────────
+async function findUserByEmail(email) {
+  const { rows } = await pool.query('select * from users where email = $1', [email]);
+  return rows[0] || null;
 }
-function saveJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+async function findUserById(id) {
+  const { rows } = await pool.query('select * from users where id = $1', [id]);
+  return rows[0] || null;
+}
+async function findUserByToken(token) {
+  const { rows } = await pool.query(
+    'select u.* from tokens t join users u on u.id = t.user_id where t.token = $1',
+    [token]
+  );
+  return rows[0] || null;
+}
+async function insertUser(user) {
+  await pool.query(
+    'insert into users (id, name, email, salt, hash, is_admin, created_at) values ($1,$2,$3,$4,$5,$6,$7)',
+    [user.id, user.name, user.email, user.salt, user.hash, user.isAdmin, user.createdAt]
+  );
+}
+async function updateUserPassword(id, salt, hash) {
+  await pool.query('update users set salt = $1, hash = $2 where id = $3', [salt, hash, id]);
+}
+async function listClients() {
+  const { rows } = await pool.query('select * from users where is_admin = false order by created_at asc');
+  return rows;
+}
+async function insertToken(token, userId) {
+  await pool.query('insert into tokens (token, user_id) values ($1,$2)', [token, userId]);
+}
+async function deleteToken(token) {
+  await pool.query('delete from tokens where token = $1', [token]);
 }
 
-let users = loadJSON(USERS_FILE, []);       // [{id,name,email,salt,hash,isAdmin,createdAt}]
-let tokens = loadJSON(TOKENS_FILE, {});     // { token: userId }
-let forms = loadJSON(FORMS_FILE, {});       // { userId: { data:{}, updatedAt, log:[] } }
-let docs = loadJSON(DOCS_FILE, {});         // { userId: [{id,category,storedName,originalName,mimetype,size,uploadedAt}] }
-let statuses = loadJSON(STATUS_FILE, {});   // { userId: { status, note, updatedAt } }
-
-const persistUsers = () => saveJSON(USERS_FILE, users);
-const persistTokens = () => saveJSON(TOKENS_FILE, tokens);
-const persistForms = () => saveJSON(FORMS_FILE, forms);
-const persistDocs = () => saveJSON(DOCS_FILE, docs);
-const persistStatuses = () => saveJSON(STATUS_FILE, statuses);
-
-function getStatus(userId) {
-  return statuses[userId] || { status: DEFAULT_STATUS, note: '', updatedAt: null };
+async function getForm(userId) {
+  const { rows } = await pool.query('select * from forms where user_id = $1', [userId]);
+  if (rows[0]) return rows[0];
+  await pool.query(
+    'insert into forms (user_id, data, log, updated_at) values ($1, $2, $3, null) on conflict (user_id) do nothing',
+    [userId, '{}', '[]']
+  );
+  return { user_id: userId, data: {}, log: [], updated_at: null };
+}
+async function saveFormData(userId, data, updatedAt) {
+  await getForm(userId); // asegura que exista la fila
+  await pool.query('update forms set data = $1, updated_at = $2 where user_id = $3', [
+    JSON.stringify(data), updatedAt, userId,
+  ]);
+}
+async function pushLog(userId, action, detail) {
+  const form = await getForm(userId);
+  const log = Array.isArray(form.log) ? form.log : [];
+  log.push({ ts: new Date().toISOString(), action, detail: detail || '' });
+  const trimmed = log.length > 500 ? log.slice(-500) : log;
+  await pool.query('update forms set log = $1 where user_id = $2', [JSON.stringify(trimmed), userId]);
 }
 
-const TEMP_PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-function generateTempPassword() {
-  const bytes = crypto.randomBytes(10);
-  let out = '';
-  for (let i = 0; i < bytes.length; i++) out += TEMP_PASSWORD_CHARS[bytes[i] % TEMP_PASSWORD_CHARS.length];
-  return out;
+async function getStatus(userId) {
+  const { rows } = await pool.query('select * from statuses where user_id = $1', [userId]);
+  if (rows[0]) return { status: rows[0].status, note: rows[0].note, updatedAt: rows[0].updated_at };
+  return { status: DEFAULT_STATUS, note: '', updatedAt: null };
+}
+async function setStatus(userId, status, note) {
+  const updatedAt = new Date().toISOString();
+  await pool.query(
+    `insert into statuses (user_id, status, note, updated_at) values ($1,$2,$3,$4)
+     on conflict (user_id) do update set status = excluded.status, note = excluded.note, updated_at = excluded.updated_at`,
+    [userId, status, note, updatedAt]
+  );
+  return { status, note, updatedAt };
 }
 
 function hashPassword(password, salt) {
@@ -67,60 +106,77 @@ function verifyPassword(password, salt, hash) {
   return crypto.timingSafeEqual(test, stored);
 }
 function publicUser(u) {
-  return { id: u.id, name: u.name, email: u.email, isAdmin: !!u.isAdmin, createdAt: u.createdAt };
+  return { id: u.id, name: u.name, email: u.email, isAdmin: !!u.is_admin, createdAt: u.created_at };
 }
-function ensureLog(userId) {
-  if (!forms[userId]) forms[userId] = { data: {}, updatedAt: null, log: [] };
-  if (!Array.isArray(forms[userId].log)) forms[userId].log = [];
-  return forms[userId];
-}
-function pushLog(userId, action, detail) {
-  const f = ensureLog(userId);
-  f.log.push({ ts: new Date().toISOString(), action, detail: detail || '' });
-  if (f.log.length > 500) f.log = f.log.slice(-500);
+function mapDoc(d) {
+  return {
+    id: d.id, category: d.category, originalName: d.original_name,
+    mimetype: d.mimetype, size: Number(d.size), uploadedAt: d.uploaded_at,
+  };
 }
 
-function completion(userId) {
+const TEMP_PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+function generateTempPassword() {
+  const bytes = crypto.randomBytes(10);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += TEMP_PASSWORD_CHARS[bytes[i] % TEMP_PASSWORD_CHARS.length];
+  return out;
+}
+
+function computeCompletion(data) {
   const total = SECTIONS.reduce((n, s) => n + s.fields.length, 0);
-  const data = (forms[userId] && forms[userId].data) || {};
   let filled = 0;
   for (const s of SECTIONS) {
     for (const f of s.fields) {
-      const v = data[`${s.id}.${f.id}`];
+      const v = (data || {})[`${s.id}.${f.id}`];
       if (v !== undefined && v !== null && String(v).trim() !== '') filled++;
     }
   }
   return { filled, total, pct: total ? Math.round((filled / total) * 100) : 0 };
 }
+async function completion(userId) {
+  const form = await getForm(userId);
+  return computeCompletion(form.data);
+}
 
-function auth(req, res, next) {
-  const token = req.headers['x-auth-token'];
-  const userId = token && tokens[token];
-  const user = userId && users.find((u) => u.id === userId);
-  if (!user) return res.status(401).json({ error: 'No autorizado' });
-  req.user = user;
-  req.token = token;
-  next();
+async function createAccount({ name, email, password, isAdmin, createdDetail }) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const user = {
+    id: crypto.randomBytes(12).toString('hex'),
+    name: String(name).trim(),
+    email,
+    salt,
+    hash: hashPassword(password, salt),
+    isAdmin: !!isAdmin,
+    createdAt: new Date().toISOString(),
+  };
+  await insertUser(user);
+  await getForm(user.id);
+  await pushLog(user.id, 'account_created', createdDetail || '');
+  await setStatus(user.id, DEFAULT_STATUS, '');
+  return findUserById(user.id);
+}
+
+async function auth(req, res, next) {
+  try {
+    const token = req.headers['x-auth-token'];
+    const user = token ? await findUserByToken(token) : null;
+    if (!user) return res.status(401).json({ error: 'No autorizado' });
+    req.user = user;
+    req.token = token;
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error de servidor' });
+  }
 }
 function requireAdmin(req, res, next) {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo administrador' });
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Solo administrador' });
   next();
 }
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    const dir = path.join(UPLOADS_DIR, req.user.id);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename(req, file, cb) {
-    const id = `${Date.now()}_${crypto.randomBytes(5).toString('hex')}`;
-    const ext = path.extname(file.originalname).slice(0, 12);
-    cb(null, `${id}${ext}`);
-  },
-});
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter(req, file, cb) {
     const ok = /^image\/|^application\/pdf$/.test(file.mimetype);
@@ -136,7 +192,7 @@ router.get('/schema', (req, res) => {
 });
 
 // ── Registro / Login ────────────────────────────────────────────────────────
-router.post('/register', (req, res) => {
+router.post('/register', wrap(async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password || password.length < 6) {
     return res.status(400).json({ error: 'Nombre, correo y contraseña (mínimo 6 caracteres) son obligatorios' });
@@ -145,57 +201,37 @@ router.post('/register', (req, res) => {
   if (emailLc !== ADMIN_EMAIL) {
     return res.status(403).json({ error: 'El registro está reservado al administrador. Pide al Ing. Rangel que te cree tu cuenta.' });
   }
-  if (users.find((u) => u.email === emailLc)) {
+  if (await findUserByEmail(emailLc)) {
     return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
   }
-  const salt = crypto.randomBytes(16).toString('hex');
-  const user = {
-    id: crypto.randomBytes(12).toString('hex'),
-    name: String(name).trim(),
-    email: emailLc,
-    salt,
-    hash: hashPassword(password, salt),
-    isAdmin: true,
-    createdAt: new Date().toISOString(),
-  };
-  users.push(user);
-  persistUsers();
-  ensureLog(user.id);
-  pushLog(user.id, 'account_created', '');
-  persistForms();
-  statuses[user.id] = { status: DEFAULT_STATUS, note: '', updatedAt: new Date().toISOString() };
-  persistStatuses();
-
+  const user = await createAccount({ name, email: emailLc, password, isAdmin: true });
   const token = crypto.randomBytes(24).toString('hex');
-  tokens[token] = user.id;
-  persistTokens();
+  await insertToken(token, user.id);
   res.json({ ok: true, token, user: publicUser(user) });
-});
+}));
 
-router.post('/login', (req, res) => {
+router.post('/login', wrap(async (req, res) => {
   const { email, password } = req.body || {};
   const emailLc = String(email || '').trim().toLowerCase();
-  const user = users.find((u) => u.email === emailLc);
+  const user = await findUserByEmail(emailLc);
   if (!user || !verifyPassword(password || '', user.salt, user.hash)) {
     return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
   }
   const token = crypto.randomBytes(24).toString('hex');
-  tokens[token] = user.id;
-  persistTokens();
+  await insertToken(token, user.id);
   res.json({ ok: true, token, user: publicUser(user) });
-});
+}));
 
-router.post('/logout', auth, (req, res) => {
-  delete tokens[req.token];
-  persistTokens();
+router.post('/logout', auth, wrap(async (req, res) => {
+  await deleteToken(req.token);
   res.json({ ok: true });
-});
+}));
 
-router.get('/me', auth, (req, res) => {
-  res.json({ user: publicUser(req.user), completion: completion(req.user.id), status: getStatus(req.user.id) });
-});
+router.get('/me', auth, wrap(async (req, res) => {
+  res.json({ user: publicUser(req.user), completion: await completion(req.user.id), status: await getStatus(req.user.id) });
+}));
 
-router.put('/password', auth, (req, res) => {
+router.put('/password', auth, wrap(async (req, res) => {
   const { currentPassword, newPassword } = req.body || {};
   if (!newPassword || String(newPassword).length < 6) {
     return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
@@ -204,173 +240,175 @@ router.put('/password', auth, (req, res) => {
     return res.status(401).json({ error: 'La contraseña actual no es correcta' });
   }
   const salt = crypto.randomBytes(16).toString('hex');
-  req.user.salt = salt;
-  req.user.hash = hashPassword(newPassword, salt);
-  persistUsers();
-  pushLog(req.user.id, 'password_changed', '');
-  persistForms();
+  await updateUserPassword(req.user.id, salt, hashPassword(newPassword, salt));
+  await pushLog(req.user.id, 'password_changed', '');
   res.json({ ok: true });
-});
+}));
 
 // ── Formulario ───────────────────────────────────────────────────────────────
-router.get('/form', auth, (req, res) => {
-  const f = ensureLog(req.user.id);
-  res.json({ data: f.data, updatedAt: f.updatedAt, log: f.log.slice(-100).reverse(), completion: completion(req.user.id) });
-});
+router.get('/form', auth, wrap(async (req, res) => {
+  const f = await getForm(req.user.id);
+  const log = Array.isArray(f.log) ? f.log : [];
+  res.json({ data: f.data || {}, updatedAt: f.updated_at, log: log.slice(-100).reverse(), completion: computeCompletion(f.data) });
+}));
 
-router.get('/log', auth, (req, res) => {
-  const f = ensureLog(req.user.id);
-  res.json({ log: f.log.slice(-100).reverse() });
-});
+router.get('/log', auth, wrap(async (req, res) => {
+  const f = await getForm(req.user.id);
+  const log = Array.isArray(f.log) ? f.log : [];
+  res.json({ log: log.slice(-100).reverse() });
+}));
 
-router.post('/form', auth, (req, res) => {
+router.post('/form', auth, wrap(async (req, res) => {
   const { data, sectionTitle } = req.body || {};
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return res.status(400).json({ error: 'Datos de formulario inválidos' });
   }
-  const f = ensureLog(req.user.id);
+  const f = await getForm(req.user.id);
+  const merged = Object.assign({}, f.data);
   let changed = 0;
   for (const [k, v] of Object.entries(data)) {
     if (typeof k !== 'string' || k.length > 120) continue;
     if (v !== null && typeof v !== 'string' && typeof v !== 'number') continue;
-    f.data[k] = v;
+    merged[k] = v;
     changed++;
   }
-  f.updatedAt = new Date().toISOString();
-  pushLog(req.user.id, 'form_saved', sectionTitle ? `Sección: ${sectionTitle} (${changed} campos)` : `${changed} campos`);
-  persistForms();
-  res.json({ ok: true, updatedAt: f.updatedAt, completion: completion(req.user.id) });
-});
+  const updatedAt = new Date().toISOString();
+  await saveFormData(req.user.id, merged, updatedAt);
+  await pushLog(req.user.id, 'form_saved', sectionTitle ? `Sección: ${sectionTitle} (${changed} campos)` : `${changed} campos`);
+  res.json({ ok: true, updatedAt, completion: computeCompletion(merged) });
+}));
 
 // ── Documentos ───────────────────────────────────────────────────────────────
-router.get('/documents', auth, (req, res) => {
-  res.json({ documents: docs[req.user.id] || [] });
-});
+router.get('/documents', auth, wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    'select id, category, original_name, mimetype, size, uploaded_at from documents where user_id = $1 order by uploaded_at asc',
+    [req.user.id]
+  );
+  res.json({ documents: rows.map(mapDoc) });
+}));
 
 router.post('/documents', auth, (req, res) => {
-  upload.single('file')(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    if (!req.file) return res.status(400).json({ error: 'Falta el archivo' });
-    const category = String(req.body.category || 'otro');
-    if (!docs[req.user.id]) docs[req.user.id] = [];
-    const entry = {
-      id: crypto.randomBytes(8).toString('hex'),
-      category,
-      storedName: req.file.filename,
-      originalName: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      uploadedAt: new Date().toISOString(),
-    };
-    docs[req.user.id].push(entry);
-    persistDocs();
-    pushLog(req.user.id, 'document_uploaded', `${entry.originalName} (${category})`);
-    persistForms();
-    res.json({ ok: true, document: entry });
+  upload.single('file')(req, res, async (err) => {
+    try {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'Falta el archivo' });
+      const category = String(req.body.category || 'otro');
+      const id = crypto.randomBytes(8).toString('hex');
+      const uploadedAt = new Date().toISOString();
+      await pool.query(
+        `insert into documents (id, user_id, category, original_name, mimetype, size, content, uploaded_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [id, req.user.id, category, req.file.originalname, req.file.mimetype, req.file.size, req.file.buffer, uploadedAt]
+      );
+      const entry = { id, category, originalName: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, uploadedAt };
+      await pushLog(req.user.id, 'document_uploaded', `${entry.originalName} (${category})`);
+      res.json({ ok: true, document: entry });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Error de servidor' });
+    }
   });
 });
 
-router.get('/documents/:id/download', auth, (req, res) => {
-  const list = docs[req.user.id] || [];
-  const entry = list.find((d) => d.id === req.params.id);
+router.get('/documents/:id/download', auth, wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    'select * from documents where id = $1 and user_id = $2',
+    [req.params.id, req.user.id]
+  );
+  const entry = rows[0];
   if (!entry) return res.status(404).json({ error: 'No encontrado' });
-  const filePath = path.join(UPLOADS_DIR, req.user.id, entry.storedName);
-  res.download(filePath, entry.originalName);
-});
+  res.set('Content-Type', entry.mimetype);
+  res.set('Content-Disposition', contentDisposition(entry.original_name));
+  res.send(entry.content);
+}));
 
-router.delete('/documents/:id', auth, (req, res) => {
-  const list = docs[req.user.id] || [];
-  const idx = list.findIndex((d) => d.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
-  const [entry] = list.splice(idx, 1);
-  persistDocs();
-  const filePath = path.join(UPLOADS_DIR, req.user.id, entry.storedName);
-  fs.unlink(filePath, () => {});
-  pushLog(req.user.id, 'document_deleted', entry.originalName);
-  persistForms();
+router.delete('/documents/:id', auth, wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    'delete from documents where id = $1 and user_id = $2 returning original_name',
+    [req.params.id, req.user.id]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  await pushLog(req.user.id, 'document_deleted', rows[0].original_name);
   res.json({ ok: true });
-});
+}));
 
 // ── Administración (Ing. Rangel) ─────────────────────────────────────────────
-router.post('/admin/users', auth, requireAdmin, (req, res) => {
+router.post('/admin/users', auth, requireAdmin, wrap(async (req, res) => {
   const { name, email } = req.body || {};
   if (!name || !email) {
     return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
   }
   const emailLc = String(email).trim().toLowerCase();
-  if (users.find((u) => u.email === emailLc)) {
+  if (await findUserByEmail(emailLc)) {
     return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
   }
   const tempPassword = generateTempPassword();
-  const salt = crypto.randomBytes(16).toString('hex');
-  const user = {
-    id: crypto.randomBytes(12).toString('hex'),
-    name: String(name).trim(),
-    email: emailLc,
-    salt,
-    hash: hashPassword(tempPassword, salt),
-    isAdmin: false,
-    createdAt: new Date().toISOString(),
-  };
-  users.push(user);
-  persistUsers();
-  ensureLog(user.id);
-  pushLog(user.id, 'account_created', 'Cuenta creada por el administrador');
-  persistForms();
-  statuses[user.id] = { status: DEFAULT_STATUS, note: '', updatedAt: new Date().toISOString() };
-  persistStatuses();
+  const user = await createAccount({
+    name, email: emailLc, password: tempPassword, isAdmin: false,
+    createdDetail: 'Cuenta creada por el administrador',
+  });
   res.json({ ok: true, user: publicUser(user), tempPassword });
-});
+}));
 
-router.get('/admin/users', auth, requireAdmin, (req, res) => {
-  const list = users.filter((u) => !u.isAdmin).map((u) => ({
-    ...publicUser(u),
-    completion: completion(u.id),
-    documentCount: (docs[u.id] || []).length,
-    formUpdatedAt: (forms[u.id] && forms[u.id].updatedAt) || null,
-    status: getStatus(u.id),
-  }));
+router.get('/admin/users', auth, requireAdmin, wrap(async (req, res) => {
+  const clients = await listClients();
+  const list = [];
+  for (const u of clients) {
+    const form = await getForm(u.id);
+    const { rows } = await pool.query('select count(*)::int as count from documents where user_id = $1', [u.id]);
+    list.push({
+      ...publicUser(u),
+      completion: computeCompletion(form.data),
+      documentCount: rows[0].count,
+      formUpdatedAt: form.updated_at,
+      status: await getStatus(u.id),
+    });
+  }
   res.json({ users: list });
-});
+}));
 
-router.get('/admin/users/:id', auth, requireAdmin, (req, res) => {
-  const u = users.find((x) => x.id === req.params.id);
+router.get('/admin/users/:id', auth, requireAdmin, wrap(async (req, res) => {
+  const u = await findUserById(req.params.id);
   if (!u) return res.status(404).json({ error: 'No encontrado' });
-  const f = ensureLog(u.id);
+  const f = await getForm(u.id);
+  const { rows: docRows } = await pool.query(
+    'select id, category, original_name, mimetype, size, uploaded_at from documents where user_id = $1 order by uploaded_at asc',
+    [u.id]
+  );
+  const log = Array.isArray(f.log) ? f.log : [];
   res.json({
     user: publicUser(u),
-    data: f.data,
-    updatedAt: f.updatedAt,
-    log: f.log.slice(-200).reverse(),
-    documents: docs[u.id] || [],
-    completion: completion(u.id),
-    status: getStatus(u.id),
+    data: f.data || {},
+    updatedAt: f.updated_at,
+    log: log.slice(-200).reverse(),
+    documents: docRows.map(mapDoc),
+    completion: computeCompletion(f.data),
+    status: await getStatus(u.id),
   });
-});
+}));
 
-router.put('/admin/users/:id/status', auth, requireAdmin, (req, res) => {
-  const u = users.find((x) => x.id === req.params.id);
+router.put('/admin/users/:id/status', auth, requireAdmin, wrap(async (req, res) => {
+  const u = await findUserById(req.params.id);
   if (!u) return res.status(404).json({ error: 'No encontrado' });
   const { status, note } = req.body || {};
   const option = STATUS_OPTIONS.find((s) => s.value === status);
   if (!option) return res.status(400).json({ error: 'Estado inválido' });
-  statuses[u.id] = {
-    status,
-    note: typeof note === 'string' ? note.trim().slice(0, 500) : '',
-    updatedAt: new Date().toISOString(),
-  };
-  persistStatuses();
-  pushLog(u.id, 'status_changed', option.label + (statuses[u.id].note ? ` — ${statuses[u.id].note}` : ''));
-  persistForms();
-  res.json({ ok: true, status: statuses[u.id] });
-});
+  const cleanNote = typeof note === 'string' ? note.trim().slice(0, 500) : '';
+  const saved = await setStatus(u.id, status, cleanNote);
+  await pushLog(u.id, 'status_changed', option.label + (cleanNote ? ` — ${cleanNote}` : ''));
+  res.json({ ok: true, status: saved });
+}));
 
-router.get('/admin/users/:id/documents/:docId/download', auth, requireAdmin, (req, res) => {
-  const list = docs[req.params.id] || [];
-  const entry = list.find((d) => d.id === req.params.docId);
+router.get('/admin/users/:id/documents/:docId/download', auth, requireAdmin, wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    'select * from documents where id = $1 and user_id = $2',
+    [req.params.docId, req.params.id]
+  );
+  const entry = rows[0];
   if (!entry) return res.status(404).json({ error: 'No encontrado' });
-  const filePath = path.join(UPLOADS_DIR, req.params.id, entry.storedName);
-  res.download(filePath, entry.originalName);
-});
+  res.set('Content-Type', entry.mimetype);
+  res.set('Content-Disposition', contentDisposition(entry.original_name));
+  res.send(entry.content);
+}));
 
 module.exports = router;
