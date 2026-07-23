@@ -20,6 +20,13 @@
     --shadow-sm: 0 1px 2px rgba(22,33,61,.06);
     --shadow-md: 0 14px 34px -16px rgba(22,33,61,.28), 0 2px 8px rgba(22,33,61,.06);
   }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   body {
     font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
     min-height: 100dvh; line-height: 1.45; -webkit-font-smoothing: antialiased;
@@ -29,11 +36,29 @@
     background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(168,121,31,.09) 0%, transparent 60%);
   }
   a { color: var(--gold-ink); }
+  .btn:focus-visible, .tab:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--gold); outline-offset: 2px;
+  }
+  #boot-loader {
+    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); transition: opacity .35s var(--ease), visibility .35s;
+  }
+  #boot-loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loader-ring {
+    width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--border2);
+    border-top-color: var(--gold); animation: spin .8s linear infinite;
+  }
+  .btn-spinner {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 7px;
+  }
   .brand-serif { font-family: 'Fraunces', serif; }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px 80px; position: relative; z-index: 1; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px calc(80px + env(safe-area-inset-bottom)); position: relative; z-index: 1; }
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; position: sticky; top: 0;
+    padding: calc(14px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 14px calc(20px + env(safe-area-inset-left));
+    position: sticky; top: 0;
     background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35); z-index: 20;
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16.5px; color: #EFE7D6; }
@@ -66,7 +91,7 @@
   #auth-screen { max-width: 440px; margin: 7vh auto 0; padding: 0 18px; }
   .auth-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 30px;
-    box-shadow: var(--shadow-md); text-align: center;
+    box-shadow: var(--shadow-md); text-align: center; animation: fadeUp .5s var(--ease);
   }
   .auth-mark {
     width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
@@ -91,7 +116,7 @@
   .field-detail { margin-top: 8px; }
   .auth-switch { text-align: center; margin-top: 18px; font-size: 13.5px; color: var(--muted); }
   .auth-switch a { cursor: pointer; text-decoration: underline; color: var(--gold-ink); font-weight: 600; }
-  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; animation: msgIn .25s var(--ease); }
   .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
   .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
 
@@ -101,12 +126,13 @@
   .tab {
     font-family: inherit; font-size: 14px; font-weight: 600; color: var(--muted); background: none;
     border: none; padding: 10px 4px; margin-right: 22px; cursor: pointer; border-bottom: 2px solid transparent;
-    transition: color .15s, border-color .15s;
+    transition: color .15s, border-color .15s; display: inline-flex; align-items: center;
   }
+  .tab svg { width: 15px; height: 15px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--navy); border-color: var(--gold); }
   .view { display: none; }
-  .view.active { display: block; }
+  .view.active { display: block; animation: viewIn .3s var(--ease); }
 
   .progress-bar { height: 7px; border-radius: 4px; background: var(--border); overflow: hidden; margin: 10px 0 4px; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--navy), var(--gold)); border-radius: 4px; transition: width .3s var(--ease); }
@@ -114,17 +140,21 @@
 
   .section-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 14px; overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease) backwards;
   }
   .section-hd {
     display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; cursor: pointer;
+    transition: background .15s;
   }
+  .section-hd:hover { background: var(--panel-soft); }
   .section-hd-title { font-family: 'Fraunces', serif; font-size: 16.5px; font-weight: 600; color: var(--navy); }
   .section-hd-meta { font-size: 12px; color: var(--dim); font-weight: 500; }
-  .section-chevron { color: var(--gold-ink); transition: transform .2s var(--ease); font-size: 13px; }
+  .section-chevron { color: var(--gold-ink); transition: transform .3s var(--ease); font-size: 13px; }
   .section-card.open .section-chevron { transform: rotate(180deg); }
-  .section-body { display: none; padding: 4px 18px 18px; }
-  .section-card.open .section-body { display: block; }
+  .section-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s var(--ease); }
+  .section-card.open .section-body { grid-template-rows: 1fr; }
+  .section-body-inner { overflow: hidden; padding: 0 18px; opacity: 0; transition: opacity .25s var(--ease), padding .35s var(--ease); }
+  .section-card.open .section-body-inner { padding: 4px 18px 18px; opacity: 1; }
   .section-actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
   .save-hint { font-size: 12px; color: var(--dim); }
 
@@ -140,6 +170,8 @@
   .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .upload-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 4px; }
   .upload-row .field { flex: 1; min-width: 160px; margin-bottom: 0; }
+  .field input[type="file"] { padding: 8px 10px; font-size: 13px; cursor: pointer; }
+  .file-name-hint { font-size: 11.5px; color: var(--dim); margin-top: 5px; }
 
   .log-item { padding: 12px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
   .log-item:first-child { border-top: none; }
@@ -147,9 +179,10 @@
 
   .admin-user-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
-    margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; box-shadow: var(--shadow-sm);
+    margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s var(--ease);
+    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease) backwards;
   }
-  .admin-user-card:hover { border-color: var(--gold); box-shadow: var(--shadow-md); }
+  .admin-user-card:hover { border-color: var(--gold); box-shadow: var(--shadow-md); transform: translateY(-2px); }
   .admin-user-top { display: flex; justify-content: space-between; align-items: center; }
   .admin-user-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15.5px; color: var(--navy); }
   .admin-user-email { font-size: 12.5px; color: var(--dim); }
@@ -167,8 +200,10 @@
 </head>
 <body>
 
+<div id="boot-loader"><div class="loader-ring"></div></div>
+
 <!-- ── AUTH ── -->
-<div id="auth-screen">
+<div id="auth-screen" style="display:none">
   <div class="auth-card">
     <div class="auth-mark">LR</div>
     <div class="auth-title">Trámite de <span>Visas</span></div>
@@ -213,9 +248,9 @@
     <!-- Cliente -->
     <div id="client-area">
       <div class="tabs">
-        <button class="tab active" data-view="view-form">Formulario</button>
-        <button class="tab" data-view="view-docs">Documentos</button>
-        <button class="tab" data-view="view-log">Historial</button>
+        <button class="tab active" data-view="view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
+        <button class="tab" data-view="view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
+        <button class="tab" data-view="view-log"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Historial</button>
       </div>
 
       <div id="view-form" class="view active">
@@ -235,6 +270,7 @@
             <div class="field">
               <label>Archivo (imagen o PDF, máx. 20MB)</label>
               <input type="file" id="doc-file" accept="image/*,application/pdf">
+              <div class="file-name-hint" id="doc-file-hint"></div>
             </div>
             <button class="btn btn-primary" id="doc-upload-btn">Subir</button>
           </div>
@@ -266,9 +302,9 @@
       <h2 class="detail-title" id="admin-detail-name"></h2>
       <div class="detail-sub" id="admin-detail-email"></div>
       <div class="tabs">
-        <button class="tab active" data-adview="adm-view-form">Formulario</button>
-        <button class="tab" data-adview="adm-view-docs">Documentos</button>
-        <button class="tab" data-adview="adm-view-log">Historial</button>
+        <button class="tab active" data-adview="adm-view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
+        <button class="tab" data-adview="adm-view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
+        <button class="tab" data-adview="adm-view-log"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Historial</button>
       </div>
       <div id="adm-view-form" class="view active"></div>
       <div id="adm-view-docs" class="view"><div id="adm-doc-list"></div></div>
@@ -340,13 +376,24 @@
     showAuthMsg('');
   });
 
+  function withLoading(btn, loadingText, fn) {
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>' + loadingText;
+    return fn().then(function(v){ btn.disabled = false; btn.innerHTML = original; return v; },
+      function(err){ btn.disabled = false; btn.innerHTML = original; throw err; });
+  }
+
   document.getElementById('login-form').addEventListener('submit', function(e){
     e.preventDefault();
     showAuthMsg('');
-    api('/login', { method:'POST', body: JSON.stringify({
-      email: document.getElementById('login-email').value,
-      password: document.getElementById('login-password').value,
-    })}).then(function(data){
+    var btn = e.target.querySelector('button[type=submit]');
+    withLoading(btn, 'Ingresando…', function(){
+      return api('/login', { method:'POST', body: JSON.stringify({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      })});
+    }).then(function(data){
       token = data.token;
       localStorage.setItem('visa_token', token);
       boot();
@@ -356,11 +403,14 @@
   document.getElementById('register-form').addEventListener('submit', function(e){
     e.preventDefault();
     showAuthMsg('');
-    api('/register', { method:'POST', body: JSON.stringify({
-      name: document.getElementById('reg-name').value,
-      email: document.getElementById('reg-email').value,
-      password: document.getElementById('reg-password').value,
-    })}).then(function(data){
+    var btn = e.target.querySelector('button[type=submit]');
+    withLoading(btn, 'Creando cuenta…', function(){
+      return api('/register', { method:'POST', body: JSON.stringify({
+        name: document.getElementById('reg-name').value,
+        email: document.getElementById('reg-email').value,
+        password: document.getElementById('reg-password').value,
+      })});
+    }).then(function(data){
       token = data.token;
       localStorage.setItem('visa_token', token);
       boot();
@@ -437,19 +487,19 @@
     container.innerHTML = schema.sections.map(function(s, i){
       var fieldsHtml = s.fields.map(function(f){ return renderField(s.id, f); }).join('');
       return (
-        '<div class="section-card' + (i===0?' open':'') + '" data-section="' + s.id + '">' +
+        '<div class="section-card' + (i===0?' open':'') + '" data-section="' + s.id + '" style="animation-delay:' + (i*45) + 'ms">' +
           '<div class="section-hd">' +
             '<div><div class="section-hd-title">' + escapeHtml(s.title) + '</div>' +
             '<div class="section-hd-meta" data-count-for="' + s.id + '">' + sectionCompletion(s) + ' campos</div></div>' +
             '<div class="section-chevron">&#9662;</div>' +
           '</div>' +
-          '<div class="section-body">' +
+          '<div class="section-body"><div class="section-body-inner">' +
             fieldsHtml +
             '<div class="section-actions">' +
               '<button class="btn btn-primary btn-sm" data-save-section="' + s.id + '">Guardar sección</button>' +
               '<span class="save-hint" data-hint-for="' + s.id + '"></span>' +
             '</div>' +
-          '</div>' +
+          '</div></div>' +
         '</div>'
       );
     }).join('');
@@ -562,6 +612,10 @@
     }).catch(function(err){ alert(err.message); });
   }
 
+  document.getElementById('doc-file').addEventListener('change', function(){
+    document.getElementById('doc-file-hint').textContent = this.files[0] ? this.files[0].name : '';
+  });
+
   document.getElementById('doc-upload-btn').addEventListener('click', function(){
     var fileInput = document.getElementById('doc-file');
     var msg = document.getElementById('doc-upload-msg');
@@ -575,6 +629,7 @@
       .then(function(){
         msg.innerHTML = '<div class="msg ok">Documento subido</div>';
         fileInput.value = '';
+        document.getElementById('doc-file-hint').textContent = '';
         loadDocuments();
         refreshLog();
       })
@@ -601,9 +656,9 @@
     api('/admin/users').then(function(data){
       var container = document.getElementById('admin-users-list');
       if (!data.users.length) { container.innerHTML = '<div class="empty">Aún no hay clientes registrados</div>'; return; }
-      container.innerHTML = data.users.map(function(u){
+      container.innerHTML = data.users.map(function(u, i){
         return (
-          '<div class="admin-user-card" data-user="' + u.id + '">' +
+          '<div class="admin-user-card" data-user="' + u.id + '" style="animation-delay:' + (i*40) + 'ms">' +
             '<div class="admin-user-top">' +
               '<div><div class="admin-user-name">' + escapeHtml(u.name) + '</div>' +
               '<div class="admin-user-email">' + escapeHtml(u.email) + '</div></div>' +
@@ -660,14 +715,21 @@
   });
 
   // ── BOOT ─────────────────────────────────────────────────────────────────
+  function hideLoader() { document.getElementById('boot-loader').classList.add('hide'); }
+
   function boot() {
-    if (!token) return;
+    if (!token) {
+      hideLoader();
+      document.getElementById('auth-screen').style.display = 'block';
+      return;
+    }
     Promise.all([
       schema ? Promise.resolve({sections:schema.sections, documentCategories:schema.documentCategories}) : api('/schema'),
       api('/me'),
     ]).then(function(results){
       schema = results[0];
       me = results[1].user;
+      hideLoader();
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('app-screen').style.display = 'block';
       document.getElementById('who-name').textContent = me.name + (me.isAdmin ? ' · Admin' : '');
@@ -692,6 +754,7 @@
     }).catch(function(){
       localStorage.removeItem('visa_token');
       token = '';
+      hideLoader();
       document.getElementById('app-screen').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'block';
     });
