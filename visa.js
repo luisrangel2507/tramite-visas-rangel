@@ -17,7 +17,7 @@ function wrap(fn) {
   return (req, res) => {
     fn(req, res).catch((err) => {
       console.error(err);
-      res.status(500).json({ error: 'Error de servidor' });
+      res.status(500).json({ error: 'Error de servidor: ' + err.message });
     });
   };
 }
@@ -167,7 +167,7 @@ async function auth(req, res, next) {
     next();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error de servidor' });
+    res.status(500).json({ error: 'Error de servidor: ' + err.message });
   }
 }
 function requireAdmin(req, res, next) {
