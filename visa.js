@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const { SECTIONS, DOCUMENT_CATEGORIES } = require('./visa-schema');
+const { SECTIONS, DOCUMENT_CATEGORIES, STATUS_OPTIONS } = require('./visa-schema');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOADS_DIR = path.join(DATA_DIR, 'visa-uploads');
@@ -15,6 +15,9 @@ const USERS_FILE = path.join(DATA_DIR, 'visa-users.json');
 const TOKENS_FILE = path.join(DATA_DIR, 'visa-tokens.json');
 const FORMS_FILE = path.join(DATA_DIR, 'visa-forms.json');
 const DOCS_FILE = path.join(DATA_DIR, 'visa-docs.json');
+const STATUS_FILE = path.join(DATA_DIR, 'visa-status.json');
+
+const DEFAULT_STATUS = STATUS_OPTIONS[0].value;
 
 const ADMIN_EMAIL = (process.env.VISA_ADMIN_EMAIL || 'luisrangel2507@gmail.com').toLowerCase();
 
@@ -34,11 +37,17 @@ let users = loadJSON(USERS_FILE, []);       // [{id,name,email,salt,hash,isAdmin
 let tokens = loadJSON(TOKENS_FILE, {});     // { token: userId }
 let forms = loadJSON(FORMS_FILE, {});       // { userId: { data:{}, updatedAt, log:[] } }
 let docs = loadJSON(DOCS_FILE, {});         // { userId: [{id,category,storedName,originalName,mimetype,size,uploadedAt}] }
+let statuses = loadJSON(STATUS_FILE, {});   // { userId: { status, note, updatedAt } }
 
 const persistUsers = () => saveJSON(USERS_FILE, users);
 const persistTokens = () => saveJSON(TOKENS_FILE, tokens);
 const persistForms = () => saveJSON(FORMS_FILE, forms);
 const persistDocs = () => saveJSON(DOCS_FILE, docs);
+const persistStatuses = () => saveJSON(STATUS_FILE, statuses);
+
+function getStatus(userId) {
+  return statuses[userId] || { status: DEFAULT_STATUS, note: '', updatedAt: null };
+}
 
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
@@ -115,7 +124,7 @@ const router = express.Router();
 
 // ── Esquema (público, para renderizar el formulario) ───────────────────────
 router.get('/schema', (req, res) => {
-  res.json({ sections: SECTIONS, documentCategories: DOCUMENT_CATEGORIES });
+  res.json({ sections: SECTIONS, documentCategories: DOCUMENT_CATEGORIES, statusOptions: STATUS_OPTIONS });
 });
 
 // ── Registro / Login ────────────────────────────────────────────────────────
@@ -143,6 +152,8 @@ router.post('/register', (req, res) => {
   ensureLog(user.id);
   pushLog(user.id, 'account_created', '');
   persistForms();
+  statuses[user.id] = { status: DEFAULT_STATUS, note: '', updatedAt: new Date().toISOString() };
+  persistStatuses();
 
   const token = crypto.randomBytes(24).toString('hex');
   tokens[token] = user.id;
@@ -170,7 +181,7 @@ router.post('/logout', auth, (req, res) => {
 });
 
 router.get('/me', auth, (req, res) => {
-  res.json({ user: publicUser(req.user), completion: completion(req.user.id) });
+  res.json({ user: publicUser(req.user), completion: completion(req.user.id), status: getStatus(req.user.id) });
 });
 
 // ── Formulario ───────────────────────────────────────────────────────────────
@@ -259,6 +270,7 @@ router.get('/admin/users', auth, requireAdmin, (req, res) => {
     completion: completion(u.id),
     documentCount: (docs[u.id] || []).length,
     formUpdatedAt: (forms[u.id] && forms[u.id].updatedAt) || null,
+    status: getStatus(u.id),
   }));
   res.json({ users: list });
 });
@@ -274,7 +286,25 @@ router.get('/admin/users/:id', auth, requireAdmin, (req, res) => {
     log: f.log.slice(-200).reverse(),
     documents: docs[u.id] || [],
     completion: completion(u.id),
+    status: getStatus(u.id),
   });
+});
+
+router.put('/admin/users/:id/status', auth, requireAdmin, (req, res) => {
+  const u = users.find((x) => x.id === req.params.id);
+  if (!u) return res.status(404).json({ error: 'No encontrado' });
+  const { status, note } = req.body || {};
+  const option = STATUS_OPTIONS.find((s) => s.value === status);
+  if (!option) return res.status(400).json({ error: 'Estado inválido' });
+  statuses[u.id] = {
+    status,
+    note: typeof note === 'string' ? note.trim().slice(0, 500) : '',
+    updatedAt: new Date().toISOString(),
+  };
+  persistStatuses();
+  pushLog(u.id, 'status_changed', option.label + (statuses[u.id].note ? ` — ${statuses[u.id].note}` : ''));
+  persistForms();
+  res.json({ ok: true, status: statuses[u.id] });
 });
 
 router.get('/admin/users/:id/documents/:docId/download', auth, requireAdmin, (req, res) => {

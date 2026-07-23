@@ -170,6 +170,16 @@ const SECTIONS = [
   },
 ];
 
+const STATUS_OPTIONS = [
+  { value: 'recibido', label: 'Solicitud recibida', tone: 'neutral' },
+  { value: 'en_revision', label: 'En revisión', tone: 'neutral' },
+  { value: 'documentacion_pendiente', label: 'Documentación pendiente', tone: 'warn' },
+  { value: 'listo_para_cita', label: 'Listo para agendar cita', tone: 'good' },
+  { value: 'cita_programada', label: 'Cita programada', tone: 'good' },
+  { value: 'aprobada', label: 'Visa aprobada', tone: 'good' },
+  { value: 'rechazada', label: 'Visa rechazada', tone: 'bad' },
+];
+
 const DOCUMENT_CATEGORIES = [
   { value: 'pasaporte', label: 'Pasaporte (escaneo o foto)' },
   { value: 'identificacion', label: 'Identificación oficial' },
@@ -184,4 +194,4 @@ function flatFieldIds() {
   return SECTIONS.flatMap((s) => s.fields.map((f) => `${s.id}.${f.id}`));
 }
 
-module.exports = { SECTIONS, DOCUMENT_CATEGORIES, SI_NO, flatFieldIds };
+module.exports = { SECTIONS, DOCUMENT_CATEGORIES, STATUS_OPTIONS, SI_NO, flatFieldIds };

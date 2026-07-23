@@ -15,7 +15,7 @@
     --text: #16213D; --muted: #5C6B85; --dim: #97A2B8;
     --navy: #16213D; --navy-deep: #0E1729;
     --gold: #A8791F; --gold-ink: #7A5A16; --gold-bg: rgba(168,121,31,.12); --gold-soft: #D9B15C;
-    --green: #1E8E5A; --red: #C0442D;
+    --green: #1E8E5A; --red: #C0442D; --amber: #B15F14; --amber-bg: rgba(177,95,20,.12);
     --ease: cubic-bezier(.32,.72,0,1);
     --shadow-sm: 0 1px 2px rgba(22,33,61,.06);
     --shadow-md: 0 14px 34px -16px rgba(22,33,61,.28), 0 2px 8px rgba(22,33,61,.06);
@@ -131,6 +131,26 @@
   .tab svg { width: 15px; height: 15px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--navy); border-color: var(--gold); }
+
+  .status-banner {
+    display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--border);
+    border-left: 4px solid var(--gold-ink); border-radius: 14px; padding: 14px 16px; margin: 18px 0 0;
+    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease);
+  }
+  .status-banner.tone-warn { border-left-color: var(--amber); }
+  .status-banner.tone-good { border-left-color: var(--green); }
+  .status-banner.tone-bad { border-left-color: var(--red); }
+  .status-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; background: var(--gold-ink); }
+  .status-banner.tone-warn .status-dot { background: var(--amber); }
+  .status-banner.tone-good .status-dot { background: var(--green); }
+  .status-banner.tone-bad .status-dot { background: var(--red); }
+  .status-label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--navy); }
+  .status-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  .pill.tone-warn { background: var(--amber-bg); color: var(--amber); }
+  .pill.tone-good { background: rgba(30,142,90,.12); color: var(--green); }
+  .pill.tone-bad { background: rgba(192,68,45,.12); color: var(--red); }
+
   .view { display: none; }
   .view.active { display: block; animation: viewIn .3s var(--ease); }
 
@@ -247,6 +267,13 @@
   <div class="wrap">
     <!-- Cliente -->
     <div id="client-area">
+      <div id="status-banner" class="status-banner" style="display:none">
+        <div class="status-dot"></div>
+        <div>
+          <div class="status-label" id="status-label"></div>
+          <div class="status-meta" id="status-meta"></div>
+        </div>
+      </div>
       <div class="tabs">
         <button class="tab active" data-view="view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
         <button class="tab" data-view="view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
@@ -301,6 +328,25 @@
       <span class="back-link" id="admin-back">&larr; Volver a clientes</span>
       <h2 class="detail-title" id="admin-detail-name"></h2>
       <div class="detail-sub" id="admin-detail-email"></div>
+
+      <div class="doc-card">
+        <div class="section-hd-title" style="margin-bottom:12px">Estado del trámite</div>
+        <div class="upload-row">
+          <div class="field" style="flex:1 1 220px">
+            <label>Estado</label>
+            <select id="admin-status-select"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nota para el cliente (opcional)</label>
+          <textarea id="admin-status-note" rows="2" placeholder="Ej. Falta comprobante de domicilio actualizado"></textarea>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-primary btn-sm" id="admin-status-save">Actualizar estado</button>
+          <span class="save-hint" id="admin-status-hint"></span>
+        </div>
+      </div>
+
       <div class="tabs">
         <button class="tab active" data-adview="adm-view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
         <button class="tab" data-adview="adm-view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
@@ -553,6 +599,30 @@
     api('/log').then(function(data){ renderLog(document.getElementById('log-list'), data.log); }).catch(function(){});
   }
 
+  // ── ESTADO DEL TRÁMITE ──────────────────────────────────────────────────────
+  function statusOption(value) {
+    return (schema.statusOptions || []).find(function(s){ return s.value === value; }) || { label: value, tone: 'neutral' };
+  }
+  function populateStatusSelect(sel) {
+    sel.innerHTML = schema.statusOptions.map(function(s){ return '<option value="' + s.value + '">' + escapeHtml(s.label) + '</option>'; }).join('');
+  }
+  function renderStatusBanner(status) {
+    var banner = document.getElementById('status-banner');
+    if (!status) { banner.style.display = 'none'; return; }
+    var opt = statusOption(status.status);
+    banner.className = 'status-banner tone-' + opt.tone;
+    banner.style.display = 'flex';
+    document.getElementById('status-label').textContent = opt.label;
+    var parts = [];
+    if (status.note) parts.push(status.note);
+    if (status.updatedAt) parts.push('Actualizado ' + fmtDate(status.updatedAt));
+    document.getElementById('status-meta').textContent = parts.join(' · ');
+  }
+  function statusPill(status) {
+    var opt = statusOption(status.status);
+    return '<span class="pill tone-' + opt.tone + '">' + escapeHtml(opt.label) + '</span>';
+  }
+
   // ── DOCUMENTOS ───────────────────────────────────────────────────────────
   function populateCategorySelect(sel, categories) {
     sel.innerHTML = categories.map(function(c){ return '<option value="' + c.value + '">' + escapeHtml(c.label) + '</option>'; }).join('');
@@ -642,6 +712,7 @@
     var labels = {
       account_created: 'Cuenta creada', form_saved: 'Formulario guardado',
       document_uploaded: 'Documento subido', document_deleted: 'Documento eliminado',
+      status_changed: 'Estado del trámite actualizado',
     };
     container.innerHTML = log.map(function(l){
       return '<div class="log-item"><b>' + (labels[l.action] || l.action) + '</b>' +
@@ -662,7 +733,7 @@
             '<div class="admin-user-top">' +
               '<div><div class="admin-user-name">' + escapeHtml(u.name) + '</div>' +
               '<div class="admin-user-email">' + escapeHtml(u.email) + '</div></div>' +
-              '<span class="pill">' + u.completion.pct + '%</span>' +
+              '<div style="display:flex;gap:6px;flex-shrink:0">' + statusPill(u.status) + '<span class="pill">' + u.completion.pct + '%</span></div>' +
             '</div>' +
             '<div class="section-hd-meta" style="margin-top:8px">' + u.documentCount + ' documento(s) · ' +
             (u.formUpdatedAt ? 'actualizado ' + fmtDate(u.formUpdatedAt) : 'sin actividad') + '</div>' +
@@ -683,6 +754,11 @@
       document.getElementById('admin-detail-name').textContent = data.user.name;
       document.getElementById('admin-detail-email').textContent = data.user.email + ' · ' + data.completion.pct + '% completado';
 
+      document.getElementById('admin-status-select').value = data.status.status;
+      document.getElementById('admin-status-note').value = data.status.note || '';
+      document.getElementById('admin-status-hint').textContent = data.status.updatedAt
+        ? 'Última actualización: ' + fmtDate(data.status.updatedAt) : 'Sin actualizaciones aún';
+
       var formContainer = document.getElementById('adm-view-form');
       formContainer.innerHTML = schema.sections.map(function(s){
         var rows = s.fields.map(function(f){
@@ -700,6 +776,18 @@
       renderLog(document.getElementById('adm-log-list'), data.log);
     });
   }
+  document.getElementById('admin-status-save').addEventListener('click', function(){
+    var hint = document.getElementById('admin-status-hint');
+    hint.textContent = 'Guardando…';
+    api('/admin/users/' + currentAdminUserId + '/status', { method:'PUT', body: JSON.stringify({
+      status: document.getElementById('admin-status-select').value,
+      note: document.getElementById('admin-status-note').value,
+    })}).then(function(){
+      openAdminDetail(currentAdminUserId);
+      loadAdminList();
+    }).catch(function(err){ hint.textContent = 'Error: ' + err.message; });
+  });
+
   document.getElementById('admin-back').addEventListener('click', function(){
     document.getElementById('admin-detail-area').style.display = 'none';
     document.getElementById('admin-list-area').style.display = 'block';
@@ -724,7 +812,7 @@
       return;
     }
     Promise.all([
-      schema ? Promise.resolve({sections:schema.sections, documentCategories:schema.documentCategories}) : api('/schema'),
+      schema ? Promise.resolve(schema) : api('/schema'),
       api('/me'),
     ]).then(function(results){
       schema = results[0];
@@ -734,6 +822,7 @@
       document.getElementById('app-screen').style.display = 'block';
       document.getElementById('who-name').textContent = me.name + (me.isAdmin ? ' · Admin' : '');
       populateCategorySelect(document.getElementById('doc-category'), schema.documentCategories);
+      populateStatusSelect(document.getElementById('admin-status-select'));
 
       if (me.isAdmin) {
         document.getElementById('client-area').style.display = 'none';
@@ -743,6 +832,7 @@
       } else {
         document.getElementById('client-area').style.display = 'block';
         document.getElementById('admin-list-area').style.display = 'none';
+        renderStatusBanner(results[1].status);
         api('/form').then(function(data){
           formData = data.data || {};
           renderSections();
