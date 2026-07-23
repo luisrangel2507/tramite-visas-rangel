@@ -49,6 +49,14 @@ function getStatus(userId) {
   return statuses[userId] || { status: DEFAULT_STATUS, note: '', updatedAt: null };
 }
 
+const TEMP_PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+function generateTempPassword() {
+  const bytes = crypto.randomBytes(10);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += TEMP_PASSWORD_CHARS[bytes[i] % TEMP_PASSWORD_CHARS.length];
+  return out;
+}
+
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
 }
@@ -134,6 +142,9 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Nombre, correo y contraseña (mínimo 6 caracteres) son obligatorios' });
   }
   const emailLc = String(email).trim().toLowerCase();
+  if (emailLc !== ADMIN_EMAIL) {
+    return res.status(403).json({ error: 'El registro está reservado al administrador. Pide al Ing. Rangel que te cree tu cuenta.' });
+  }
   if (users.find((u) => u.email === emailLc)) {
     return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
   }
@@ -144,7 +155,7 @@ router.post('/register', (req, res) => {
     email: emailLc,
     salt,
     hash: hashPassword(password, salt),
-    isAdmin: emailLc === ADMIN_EMAIL,
+    isAdmin: true,
     createdAt: new Date().toISOString(),
   };
   users.push(user);
@@ -182,6 +193,23 @@ router.post('/logout', auth, (req, res) => {
 
 router.get('/me', auth, (req, res) => {
   res.json({ user: publicUser(req.user), completion: completion(req.user.id), status: getStatus(req.user.id) });
+});
+
+router.put('/password', auth, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!newPassword || String(newPassword).length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+  }
+  if (!verifyPassword(currentPassword || '', req.user.salt, req.user.hash)) {
+    return res.status(401).json({ error: 'La contraseña actual no es correcta' });
+  }
+  const salt = crypto.randomBytes(16).toString('hex');
+  req.user.salt = salt;
+  req.user.hash = hashPassword(newPassword, salt);
+  persistUsers();
+  pushLog(req.user.id, 'password_changed', '');
+  persistForms();
+  res.json({ ok: true });
 });
 
 // ── Formulario ───────────────────────────────────────────────────────────────
@@ -264,6 +292,36 @@ router.delete('/documents/:id', auth, (req, res) => {
 });
 
 // ── Administración (Ing. Rangel) ─────────────────────────────────────────────
+router.post('/admin/users', auth, requireAdmin, (req, res) => {
+  const { name, email } = req.body || {};
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
+  }
+  const emailLc = String(email).trim().toLowerCase();
+  if (users.find((u) => u.email === emailLc)) {
+    return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
+  }
+  const tempPassword = generateTempPassword();
+  const salt = crypto.randomBytes(16).toString('hex');
+  const user = {
+    id: crypto.randomBytes(12).toString('hex'),
+    name: String(name).trim(),
+    email: emailLc,
+    salt,
+    hash: hashPassword(tempPassword, salt),
+    isAdmin: false,
+    createdAt: new Date().toISOString(),
+  };
+  users.push(user);
+  persistUsers();
+  ensureLog(user.id);
+  pushLog(user.id, 'account_created', 'Cuenta creada por el administrador');
+  persistForms();
+  statuses[user.id] = { status: DEFAULT_STATUS, note: '', updatedAt: new Date().toISOString() };
+  persistStatuses();
+  res.json({ ok: true, user: publicUser(user), tempPassword });
+});
+
 router.get('/admin/users', auth, requireAdmin, (req, res) => {
   const list = users.filter((u) => !u.isAdmin).map((u) => ({
     ...publicUser(u),

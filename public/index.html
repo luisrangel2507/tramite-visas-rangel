@@ -119,6 +119,15 @@
   .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; animation: msgIn .25s var(--ease); }
   .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
   .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
+  .credential-box {
+    background: var(--gold-bg); border: 1px dashed var(--gold); border-radius: 10px;
+    padding: 12px 14px; font-size: 13.5px; margin-bottom: 14px; animation: msgIn .25s var(--ease);
+  }
+  .credential-box code {
+    font-family: monospace; background: var(--panel); border: 1px solid var(--border2);
+    border-radius: 5px; padding: 2px 6px; font-size: 13px;
+  }
+  .credential-hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
   /* ── APP ── */
   #app-screen { display: none; }
@@ -228,7 +237,7 @@
     <div class="auth-mark">LR</div>
     <div class="auth-title">Trámite de <span>Visas</span></div>
     <div class="auth-rule"></div>
-    <div class="auth-sub">Ing. Luis Eduardo Rangel Llanes — completa tu información y sube tu documentación de forma segura.</div>
+    <div class="auth-sub">Ing. Luis Eduardo Rangel Llanes — ingresa con los datos de acceso que te compartió tu asesor.</div>
     <div id="auth-msg"></div>
 
     <form id="login-form">
@@ -236,18 +245,6 @@
       <div class="field"><label>Contraseña</label><input type="password" id="login-password" required autocomplete="current-password"></div>
       <button class="btn btn-primary" style="width:100%" type="submit">Ingresar</button>
     </form>
-
-    <form id="register-form" style="display:none">
-      <div class="field"><label>Nombre completo</label><input type="text" id="reg-name" required></div>
-      <div class="field"><label>Correo electrónico</label><input type="email" id="reg-email" required autocomplete="username"></div>
-      <div class="field"><label>Contraseña (mínimo 6 caracteres)</label><input type="password" id="reg-password" required minlength="6" autocomplete="new-password"></div>
-      <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta</button>
-    </form>
-
-    <div class="auth-switch">
-      <span id="to-register">¿No tienes cuenta? <a>Regístrate</a></span>
-      <span id="to-login" style="display:none">¿Ya tienes cuenta? <a>Ingresa</a></span>
-    </div>
   </div>
 </div>
 
@@ -313,6 +310,15 @@
         <div class="doc-card">
           <div id="log-list"></div>
         </div>
+        <div class="doc-card">
+          <div class="section-hd-title" style="margin-bottom:12px">Cambiar contraseña</div>
+          <div class="field"><label>Contraseña actual</label><input type="password" id="pwd-current" autocomplete="current-password"></div>
+          <div class="field"><label>Nueva contraseña (mínimo 6 caracteres)</label><input type="password" id="pwd-new" minlength="6" autocomplete="new-password"></div>
+          <div class="section-actions">
+            <button class="btn btn-primary btn-sm" id="pwd-save-btn">Actualizar contraseña</button>
+            <span class="save-hint" id="pwd-hint"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -320,6 +326,17 @@
     <div id="admin-list-area" style="display:none">
       <h2 class="detail-title">Clientes</h2>
       <div class="detail-sub">Selecciona un cliente para ver su información y documentación.</div>
+
+      <div class="doc-card">
+        <div class="section-hd-title" style="margin-bottom:12px">Crear cuenta de cliente</div>
+        <div class="upload-row">
+          <div class="field"><label>Nombre completo</label><input type="text" id="new-client-name"></div>
+          <div class="field"><label>Correo electrónico</label><input type="email" id="new-client-email"></div>
+          <button class="btn btn-primary" id="new-client-btn">Crear cuenta</button>
+        </div>
+        <div id="new-client-msg"></div>
+      </div>
+
       <div id="admin-users-list"></div>
     </div>
 
@@ -407,21 +424,6 @@
   function showAuthMsg(text, isErr) {
     authMsg.innerHTML = text ? '<div class="msg ' + (isErr?'err':'ok') + '">' + escapeHtml(text) + '</div>' : '';
   }
-  document.getElementById('to-register').addEventListener('click', function(){
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('register-form').style.display = 'block';
-    document.getElementById('to-register').style.display = 'none';
-    document.getElementById('to-login').style.display = 'block';
-    showAuthMsg('');
-  });
-  document.getElementById('to-login').addEventListener('click', function(){
-    document.getElementById('register-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('to-login').style.display = 'none';
-    document.getElementById('to-register').style.display = 'block';
-    showAuthMsg('');
-  });
-
   function withLoading(btn, loadingText, fn) {
     var original = btn.innerHTML;
     btn.disabled = true;
@@ -438,23 +440,6 @@
       return api('/login', { method:'POST', body: JSON.stringify({
         email: document.getElementById('login-email').value,
         password: document.getElementById('login-password').value,
-      })});
-    }).then(function(data){
-      token = data.token;
-      localStorage.setItem('visa_token', token);
-      boot();
-    }).catch(function(err){ showAuthMsg(err.message, true); });
-  });
-
-  document.getElementById('register-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    showAuthMsg('');
-    var btn = e.target.querySelector('button[type=submit]');
-    withLoading(btn, 'Creando cuenta…', function(){
-      return api('/register', { method:'POST', body: JSON.stringify({
-        name: document.getElementById('reg-name').value,
-        email: document.getElementById('reg-email').value,
-        password: document.getElementById('reg-password').value,
       })});
     }).then(function(data){
       token = data.token;
@@ -706,13 +691,28 @@
       .catch(function(err){ msg.innerHTML = '<div class="msg err">' + escapeHtml(err.message) + '</div>'; });
   });
 
+  document.getElementById('pwd-save-btn').addEventListener('click', function(){
+    var cur = document.getElementById('pwd-current');
+    var neu = document.getElementById('pwd-new');
+    var hint = document.getElementById('pwd-hint');
+    if (neu.value.length < 6) { hint.textContent = 'La nueva contraseña debe tener al menos 6 caracteres'; return; }
+    hint.textContent = 'Guardando…';
+    api('/password', { method:'PUT', body: JSON.stringify({ currentPassword: cur.value, newPassword: neu.value }) })
+      .then(function(){
+        hint.textContent = 'Contraseña actualizada';
+        cur.value = ''; neu.value = '';
+        refreshLog();
+      })
+      .catch(function(err){ hint.textContent = 'Error: ' + err.message; });
+  });
+
   // ── HISTORIAL ────────────────────────────────────────────────────────────
   function renderLog(container, log) {
     if (!log || !log.length) { container.innerHTML = '<div class="empty">Sin actividad registrada</div>'; return; }
     var labels = {
       account_created: 'Cuenta creada', form_saved: 'Formulario guardado',
       document_uploaded: 'Documento subido', document_deleted: 'Documento eliminado',
-      status_changed: 'Estado del trámite actualizado',
+      status_changed: 'Estado del trámite actualizado', password_changed: 'Contraseña actualizada',
     };
     container.innerHTML = log.map(function(l){
       return '<div class="log-item"><b>' + (labels[l.action] || l.action) + '</b>' +
@@ -723,6 +723,31 @@
 
   // ── ADMIN ────────────────────────────────────────────────────────────────
   var currentAdminUserId = null;
+
+  document.getElementById('new-client-btn').addEventListener('click', function(){
+    var nameEl = document.getElementById('new-client-name');
+    var emailEl = document.getElementById('new-client-email');
+    var msg = document.getElementById('new-client-msg');
+    var btn = document.getElementById('new-client-btn');
+    var name = nameEl.value.trim();
+    var email = emailEl.value.trim();
+    if (!name || !email) { msg.innerHTML = '<div class="msg err">Nombre y correo son obligatorios</div>'; return; }
+    msg.innerHTML = '';
+    withLoading(btn, 'Creando…', function(){
+      return api('/admin/users', { method:'POST', body: JSON.stringify({ name: name, email: email }) });
+    }).then(function(data){
+      msg.innerHTML =
+        '<div class="msg ok">Cuenta creada para ' + escapeHtml(data.user.name) + '</div>' +
+        '<div class="credential-box">' +
+          '<div><b>Correo:</b> ' + escapeHtml(data.user.email) + '</div>' +
+          '<div><b>Contraseña temporal:</b> <code>' + escapeHtml(data.tempPassword) + '</code></div>' +
+          '<div class="credential-hint">Comparte estos datos con el cliente. La contraseña no volverá a mostrarse aquí; el cliente puede cambiarla desde su cuenta una vez que ingrese.</div>' +
+        '</div>';
+      nameEl.value = ''; emailEl.value = '';
+      loadAdminList();
+    }).catch(function(err){ msg.innerHTML = '<div class="msg err">' + escapeHtml(err.message) + '</div>'; });
+  });
+
   function loadAdminList() {
     api('/admin/users').then(function(data){
       var container = document.getElementById('admin-users-list');
