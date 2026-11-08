@@ -60,12 +60,12 @@
           // la lista cuenta como 1 unidad: debe tener al menos un elemento
           st++;
           if (isFilled(scope[f.id])) sf++;
-          else missing.push({ sectionId: s.id, section: s.title, label: missingLabel(f, path) + ' (agrega al menos uno)' });
+          else missing.push({ sectionId: s.id, section: s.title, field: f.id, label: missingLabel(f, path) + ' (agrega al menos uno)' });
           return;
         }
         st++;
         if (isFilled(scope[f.id])) sf++;
-        else missing.push({ sectionId: s.id, section: s.title, label: missingLabel(f, path) });
+        else missing.push({ sectionId: s.id, section: s.title, field: path.length ? path[0].field.id : f.id, label: missingLabel(f, path) });
       }, []);
       bySection[s.id] = { filled: sf, total: st };
       filled += sf; total += st;
