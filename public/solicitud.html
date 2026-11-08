@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Solicitud de visa — Rangel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F2EA; --panel: #FFFFFF; --panel-soft: #FBF9F4;
+    --border: rgba(22,33,61,.10); --border2: rgba(22,33,61,.22);
+    --text: #16213D; --muted: #5C6B85; --dim: #7C879C;
+    --navy: #16213D; --navy-deep: #0E1729;
+    --gold: #A8791F; --gold-ink: #7A5A16; --gold-bg: rgba(168,121,31,.12); --gold-soft: #D9B15C;
+    --green: #1E8E5A; --red: #C0442D; --amber: #B15F14;
+    --ease: cubic-bezier(.32,.72,0,1);
+    --shadow-sm: 0 1px 2px rgba(22,33,61,.06);
+    --shadow-md: 0 14px 34px -16px rgba(22,33,61,.28), 0 2px 8px rgba(22,33,61,.06);
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(168,121,31,.09) 0%, transparent 60%); }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .topbar { position: sticky; top: 0; z-index: 30; background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35);
+    padding: calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left)); }
+  .topbar-in { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #EFE7D6; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(155deg, var(--gold-soft), var(--gold)); color: var(--navy-deep); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .brand span { color: var(--gold-soft); }
+  .save-state { font-size: 12px; color: #A9B2C6; white-space: nowrap; }
+  .save-state.err { color: #F2A596; }
+  .progress { height: 4px; background: rgba(255,255,255,.12); }
+  .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-soft), #F0D28A); transition: width .3s var(--ease); }
+
+  .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 18px 14px calc(110px + env(safe-area-inset-bottom)); }
+  .steps { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 12px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .step-chip { flex: 0 0 auto; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--muted); background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .step-chip.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .step-chip .tick { width: 14px; height: 14px; border-radius: 50%; background: var(--green); color: #fff; font-size: 9px; display: none; align-items: center; justify-content: center; }
+  .step-chip.done .tick { display: inline-flex; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 22px 18px; box-shadow: var(--shadow-sm); animation: fadeUp .35s var(--ease); }
+  .card h1 { font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600; letter-spacing: -.3px; margin-bottom: 4px; }
+  .card .intro { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+  .welcome { background: var(--gold-bg); border: 1px solid rgba(168,121,31,.3); border-radius: 14px; padding: 14px 16px; font-size: 13.5px; margin-bottom: 14px; color: var(--navy); }
+  .welcome b { font-family: 'Fraunces', serif; font-size: 16px; display: block; margin-bottom: 4px; }
+
+  .field { margin-bottom: 16px; }
+  .field > label, .field .lbl { display: block; font-size: 13px; color: var(--navy); margin-bottom: 6px; font-weight: 600; }
+  .field .help { font-size: 12px; color: var(--dim); margin-top: 5px; }
+  .field input[type=text], .field input[type=tel], .field input[type=email], .field input[type=number], .field input[type=date], .field select, .field textarea {
+    width: 100%; font-family: inherit; font-size: 16px; color: var(--text); background: var(--panel-soft);
+    border: 1px solid var(--border2); border-radius: 10px; padding: 11px 12px; outline: none; transition: border-color .15s, box-shadow .15s; min-height: 46px; }
+  .field textarea { resize: vertical; min-height: 84px; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-bg); }
+  .field input:disabled { background: #EEE9DC; color: var(--dim); }
+  .na-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .na-row input { width: 18px; height: 18px; accent-color: var(--navy); }
+  .opt { font-weight: 400; color: var(--dim); font-size: 12px; margin-left: 4px; }
+
+  .yn { display: flex; gap: 10px; }
+  .yn button { flex: 1; font: inherit; font-size: 15px; font-weight: 600; min-height: 46px; border-radius: 10px; border: 1px solid var(--border2); background: var(--panel-soft); color: var(--muted); cursor: pointer; transition: all .15s; }
+  .yn button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .yn button.on.no { background: #fff; color: var(--navy); border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+
+  .list { margin-bottom: 18px; }
+  .list-title { font-size: 13px; font-weight: 700; color: var(--gold-ink); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .list-item { border: 1px solid var(--border2); background: var(--panel-soft); border-radius: 14px; padding: 14px 14px 2px; margin-bottom: 10px; }
+  .list-item-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-family: 'Fraunces', serif; font-weight: 600; color: var(--navy); }
+  .list-item .field input, .list-item .field select, .list-item .field textarea { background: #fff; }
+
+  .btn { font: inherit; font-size: 14.5px; font-weight: 600; min-height: 46px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--border2); background: var(--panel); color: var(--text); cursor: pointer; box-shadow: var(--shadow-sm); transition: transform .12s var(--ease), border-color .15s; }
+  .btn:active { transform: scale(.97); }
+  .btn:hover { border-color: var(--gold); }
+  .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .btn-primary:hover { background: var(--navy-deep); border-color: var(--gold-soft); }
+  .btn-sm { min-height: 38px; padding: 0 14px; font-size: 13px; }
+  .btn-link { background: none; border: none; box-shadow: none; color: var(--red); min-height: 32px; padding: 0 6px; font-size: 13px; }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: rgba(245,242,234,.94); backdrop-filter: blur(8px); border-top: 1px solid var(--border);
+    padding: 10px calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); }
+  .nav-in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; }
+  .nav-in .btn { flex: 1; }
+  .nav-in .btn-back { flex: 0 0 38%; }
+
+  .msg { font-size: 13.5px; padding: 11px 13px; border-radius: 10px; margin-bottom: 14px; }
+  .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
+  .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
+  .missing-group { margin-bottom: 14px; }
+  .missing-group h3 { font-size: 13px; color: var(--navy); margin-bottom: 6px; }
+  .missing-group ul { list-style: none; }
+  .missing-group li { font-size: 13px; color: var(--muted); padding: 6px 0; border-top: 1px solid var(--border); }
+  .goto { font: inherit; font-size: 12.5px; font-weight: 600; background: none; border: none; color: var(--gold-ink); text-decoration: underline; cursor: pointer; padding: 0; }
+  .decl { display: flex; gap: 10px; align-items: flex-start; background: var(--panel-soft); border: 1px solid var(--border2); border-radius: 12px; padding: 14px; font-size: 13.5px; margin: 16px 0; cursor: pointer; }
+  .decl input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--navy); flex-shrink: 0; }
+
+  .doc-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .doc-row span { color: var(--dim); font-size: 12px; display: block; }
+  .upload { display: grid; gap: 10px; margin-bottom: 14px; }
+  .upload input[type=file] { font-size: 14px; }
+
+  .center { max-width: 460px; margin: 12vh auto 0; padding: 0 18px; text-align: center; position: relative; z-index: 1; }
+  .center .card { padding: 32px 24px; }
+  .big-mark { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; background: linear-gradient(155deg, var(--navy), var(--navy-deep)); color: var(--gold-soft); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; }
+  .loader-ring { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--gold); animation: spin .8s linear infinite; margin: 0 auto; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="boot" class="center"><div class="loader-ring"></div></div>
+
+<div id="error-screen" class="center hidden">
+  <div class="card">
+    <div class="big-mark">LR</div>
+    <h1>Enlace no disponible</h1>
+    <p class="intro" id="error-text" style="margin-top:8px"></p>
+  </div>
+</div>
+
+<div id="done-screen" class="center hidden">
+  <div class="card">
+    <div class="big-mark">✓</div>
+    <h1>¡Información enviada!</h1>
+    <p class="intro" style="margin-top:8px">Gracias, <span id="done-name"></span>. Tu asesor, el Ing. Luis Eduardo Rangel Llanes, ya tiene tus datos y te contactará para los siguientes pasos.</p>
+    <button class="btn" id="done-back" style="width:100%">Revisar o editar mis respuestas</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="brand"><div class="brand-mark">LR</div><div>Trámite de <span>Visas</span></div></div>
+      <div class="save-state" id="save-state"></div>
+    </div>
+  </header>
+  <div style="background:var(--navy-deep)"><div class="progress"><div class="progress-fill" id="progress-fill"></div></div></div>
+
+  <main class="wrap">
+    <nav class="steps" id="steps" aria-label="Secciones"></nav>
+    <div id="step-body"></div>
+  </main>
+
+  <div class="nav"><div class="nav-in">
+    <button class="btn btn-back" id="btn-back">Atrás</button>
+    <button class="btn btn-primary" id="btn-next">Siguiente</button>
+  </div></div>
+</div>
+
+<div id="datalists"></div>
+
+<script src="/ds160-logic.js"></script>
+<script>
+(function () {
+  var DS = window.DS160;
+  var token = (location.pathname.split('/')[2] || '').trim();
+  var API = '/api/visa/s/' + encodeURIComponent(token);
+
+  var schema = null, data = {}, docs = [], clientName = '', submittedAt = null;
+  var steps = [], stepIdx = 0;
+  var dirty = {}, saveTimer = null, saving = false, queued = false;
+  var lastComp = null;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtSize(b) { return b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }
+
+  function http(method, url, body, isForm) {
+    var opts = { method: method, headers: {}, keepalive: false };
+    if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    if (isForm) opts.body = body;
+    return fetch(url, opts).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) { var e = new Error(d.error || 'Error de red'); e.payload = d; e.status = res.status; throw e; }
+        return d;
+      });
+    });
+  }
+
+  // ── Datos por ruta ("lista.0.campo") ────────────────────────────────────
+  function getScope(parts) {
+    var s = data;
+    for (var i = 0; i < parts.length; i++) { if (s == null) return {}; s = s[parts[i]]; }
+    return s || {};
+  }
+  function setAt(path, value) {
+    var parts = path.split('.');
+    var last = parts.pop();
+    var scope = data;
+    parts.forEach(function (p) { scope = scope[p]; });
+    scope[last] = value;
+    dirty[path.split('.')[0]] = true;
+  }
+  function getAt(path) {
+    var v = data;
+    path.split('.').forEach(function (p) { v = v == null ? undefined : v[p]; });
+    return v;
+  }
+
+  // ── Render de campos ────────────────────────────────────────────────────
+  function fieldHtml(f, scope, path) {
+    if (!DS.isVisible(f, scope)) return '';
+    var key = path ? path + '.' + f.id : f.id;
+    var domId = 'f_' + key.replace(/\./g, '_');
+    var val = scope[f.id];
+    if (val == null) val = '';
+
+    if (f.type === 'list') return listHtml(f, scope, key);
+
+    var isNA = val === DS.NA;
+    var label = esc(f.label) + (f.optional ? '<span class="opt">(opcional)</span>' : '');
+    var html = '<div class="field" data-field="' + esc(key) + '">';
+
+    if (f.type === 'yesno') {
+      html += '<div class="lbl" id="' + domId + '_l">' + label + '</div>';
+      html += '<div class="yn" role="group" aria-labelledby="' + domId + '_l">' +
+        '<button type="button" class="' + (val === 'si' ? 'on' : '') + '" data-yn="' + esc(key) + '" data-v="si" aria-pressed="' + (val === 'si') + '">Sí</button>' +
+        '<button type="button" class="no ' + (val === 'no' ? 'on' : '') + '" data-yn="' + esc(key) + '" data-v="no" aria-pressed="' + (val === 'no') + '">No</button></div>';
+    } else {
+      html += '<label for="' + domId + '">' + label + '</label>';
+      var dis = isNA ? ' disabled' : '';
+      var v = isNA ? '' : val;
+      if (f.type === 'textarea') {
+        html += '<textarea id="' + domId + '" data-path="' + esc(key) + '"' + dis + '>' + esc(v) + '</textarea>';
+      } else if (f.type === 'select') {
+        html += '<select id="' + domId + '" data-path="' + esc(key) + '" data-select="1"><option value="">— Selecciona —</option>' +
+          f.options.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === val ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>';
+      } else {
+        var type = f.type === 'date' ? 'date' : f.type === 'tel' ? 'tel' : f.type === 'email' ? 'email' : f.type === 'number' ? 'number' : 'text';
+        var extra = '';
+        if (type === 'tel') extra += ' inputmode="tel" autocomplete="off"';
+        if (type === 'number') extra += ' inputmode="numeric" min="0"';
+        if (type === 'email') extra += ' inputmode="email" autocomplete="off" autocapitalize="off"';
+        if (f.list) extra += ' list="dl_' + f.list + '"';
+        html += '<input type="' + type + '" id="' + domId + '" data-path="' + esc(key) + '" value="' + esc(v) + '"' + extra + dis + '>';
+      }
+      if (f.na) {
+        html += '<label class="na-row"><input type="checkbox" data-na="' + esc(key) + '"' + (isNA ? ' checked' : '') + '> ' + esc(f.na) + '</label>';
+      }
+    }
+    if (f.help) html += '<div class="help">' + esc(f.help) + '</div>';
+    return html + '</div>';
+  }
+
+  function listHtml(f, scope, key) {
+    var items = Array.isArray(scope[f.id]) ? scope[f.id] : [];
+    var html = '<div class="list" data-list="' + esc(key) + '"><div class="list-title">' + esc(f.label) + '</div>';
+    items.forEach(function (it, i) {
+      var p = key + '.' + i;
+      html += '<div class="list-item"><div class="list-item-hd"><span>' + esc(f.itemLabel) + ' ' + (i + 1) + '</span>' +
+        ((items.length > 1 || !f.min) ? '<button type="button" class="btn btn-link" data-remove="' + esc(key) + '" data-i="' + i + '">Quitar</button>' : '') + '</div>';
+      html += f.fields.map(function (sf) { return fieldHtml(sf, it || {}, p); }).join('');
+      html += '</div>';
+    });
+    if (items.length < (f.max || 10)) {
+      html += '<button type="button" class="btn btn-sm" data-add="' + esc(key) + '">+ ' + esc(f.addLabel) + '</button>';
+    }
+    return html + '</div>';
+  }
+
+  // Al mostrarse una lista vacía, crea el primer elemento para que no haya que pulsar "agregar".
+  function ensureLists() {
+    var changed = false;
+    schema.sections.forEach(function (s) {
+      s.fields.forEach(function (f) {
+        if (f.type !== 'list' || !DS.isVisible(f, data)) return;
+        if (!Array.isArray(data[f.id]) || !data[f.id].length) { data[f.id] = [{}]; dirty[f.id] = true; changed = true; }
+      });
+    });
+    if (changed) scheduleSave(600);
+  }
+
+  // ── Pasos ───────────────────────────────────────────────────────────────
+  function buildSteps() {
+    steps = schema.sections.map(function (s) { return { id: s.id, title: s.title, section: s }; });
+    steps.push({ id: 'docs', title: 'Documentos' });
+    steps.push({ id: 'review', title: 'Revisar y enviar' });
+  }
+
+  function renderChips() {
+    var comp = lastComp = DS.completion(schema.sections, data);
+    $('steps').innerHTML = steps.map(function (s, i) {
+      var done = false;
+      if (s.section) { var b = comp.bySection[s.id]; done = b && b.total > 0 && b.filled === b.total; }
+      if (s.id === 'review') done = !!submittedAt;
+      return '<button type="button" class="step-chip' + (i === stepIdx ? ' active' : '') + (done ? ' done' : '') + '" data-step="' + i + '">' +
+        '<span class="tick">✓</span>' + esc(s.title) + '</button>';
+    }).join('');
+    $('progress-fill').style.width = comp.pct + '%';
+    var active = $('steps').querySelector('.active');
+    if (active && active.scrollIntoView) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+
+  function renderStep(keepScroll) {
+    var s = steps[stepIdx];
+    var y = window.scrollY;
+    var html = '';
+    if (s.section) {
+      if (stepIdx === 0 && !submittedAt) {
+        html += '<div class="welcome"><b>Hola, ' + esc(clientName) + '</b>Llena esta información con calma y tal como aparece en tus documentos. Se guarda sola mientras escribes; puedes cerrar la página y continuar después con este mismo enlace.</div>';
+      }
+      html += '<div class="card"><h1>' + esc(s.section.title) + '</h1>' +
+        (s.section.intro ? '<p class="intro">' + esc(s.section.intro) + '</p>' : '<div style="height:12px"></div>') +
+        s.section.fields.map(function (f) { return fieldHtml(f, data, ''); }).join('') + '</div>';
+    } else if (s.id === 'docs') {
+      html += docsHtml();
+    } else {
+      html += reviewHtml();
+    }
+    $('step-body').innerHTML = html;
+    $('btn-back').style.visibility = stepIdx === 0 ? 'hidden' : 'visible';
+    var last = stepIdx === steps.length - 1;
+    $('btn-next').textContent = last ? (submittedAt ? 'Reenviar' : 'Enviar solicitud') : 'Siguiente';
+    $('btn-next').disabled = false;
+    if (last) updateSubmitState();
+    renderChips();
+    if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
+  }
+
+  // ── Documentos ──────────────────────────────────────────────────────────
+  function catLabel(v) { var c = schema.documentCategories.filter(function (x) { return x.value === v; })[0]; return c ? c.label : v; }
+  function docsHtml() {
+    return '<div class="card"><h1>Documentos</h1><p class="intro">Opcional: sube una foto o escaneo de tu pasaporte y de cualquier otro documento que tu asesor te haya pedido (imagen o PDF, máx. 20 MB).</p>' +
+      '<div class="upload"><div class="field" style="margin:0"><label for="doc-cat">Tipo de documento</label><select id="doc-cat">' +
+      schema.documentCategories.map(function (c) { return '<option value="' + esc(c.value) + '">' + esc(c.label) + '</option>'; }).join('') + '</select></div>' +
+      '<input type="file" id="doc-file" accept="image/*,application/pdf" aria-label="Archivo">' +
+      '<button class="btn btn-primary" id="doc-upload" type="button">Subir documento</button><div id="doc-msg"></div></div>' +
+      '<div class="list-title">Tus documentos</div><div id="doc-list">' + docListHtml() + '</div></div>';
+  }
+  function docListHtml() {
+    if (!docs.length) return '<div class="help" style="padding:8px 0">Aún no has subido documentos.</div>';
+    return docs.map(function (d) {
+      return '<div class="doc-row"><div>' + esc(d.originalName) + '<span>' + esc(catLabel(d.category)) + ' · ' + fmtSize(d.size) + '</span></div>' +
+        '<button type="button" class="btn btn-link" data-deldoc="' + esc(d.id) + '">Eliminar</button></div>';
+    }).join('');
+  }
+
+  // ── Revisar y enviar ────────────────────────────────────────────────────
+  function reviewHtml() {
+    var comp = DS.completion(schema.sections, data);
+    var html = '<div class="card"><h1>Revisar y enviar</h1>';
+    if (submittedAt) html += '<div class="msg ok">Tu información ya fue enviada. Si haces cambios, vuelve a pulsar “Reenviar”.</div>';
+    if (comp.missing.length) {
+      html += '<p class="intro">Te faltan <b>' + comp.missing.length + '</b> campo(s) obligatorio(s). Toca “Ir” para completarlos.</p>';
+      var groups = {};
+      comp.missing.forEach(function (m) { (groups[m.sectionId] = groups[m.sectionId] || { title: m.section, items: [] }).items.push(m); });
+      Object.keys(groups).forEach(function (id) {
+        var idx = steps.findIndex(function (s) { return s.id === id; });
+        html += '<div class="missing-group"><h3>' + esc(groups[id].title) + ' <button type="button" class="goto" data-step="' + idx + '">Ir</button></h3><ul>' +
+          groups[id].items.slice(0, 8).map(function (m) { return '<li>' + esc(m.label) + '</li>'; }).join('') +
+          (groups[id].items.length > 8 ? '<li>… y ' + (groups[id].items.length - 8) + ' más</li>' : '') + '</ul></div>';
+      });
+    } else {
+      html += '<div class="msg ok">¡Todo completo! Solo falta tu confirmación.</div>';
+    }
+    html += '<label class="decl"><input type="checkbox" id="decl"' + (data.declaracion === 'si' ? ' checked' : '') + '>' +
+      '<span>Declaro bajo protesta de decir verdad que toda la información proporcionada es verdadera y completa, y entiendo que declaraciones falsas pueden causar la negativa permanente de una visa.</span></label>';
+    html += '<div id="submit-msg"></div></div>';
+    return html;
+  }
+  function updateSubmitState() {
+    if (steps[stepIdx].id !== 'review') return;
+    var comp = DS.completion(schema.sections, data);
+    $('btn-next').disabled = comp.missing.length > 0 || data.declaracion !== 'si';
+  }
+
+  // ── Guardado automático ─────────────────────────────────────────────────
+  function setSaveState(text, isErr) {
+    var el = $('save-state'); el.textContent = text; el.className = 'save-state' + (isErr ? ' err' : '');
+  }
+  function scheduleSave(ms) {
+    setSaveState('Guardando…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, ms == null ? 900 : ms);
+  }
+  function flush() {
+    clearTimeout(saveTimer);
+    if (saving) { queued = true; return Promise.resolve(); }
+    var keys = Object.keys(dirty);
+    if (!keys.length) return Promise.resolve();
+    var patch = {};
+    keys.forEach(function (k) { patch[k] = data[k] === undefined ? '' : data[k]; });
+    dirty = {};
+    saving = true;
+    return http('PUT', API, { patch: patch }).then(function () {
+      saving = false;
+      if (Object.keys(dirty).length || queued) { queued = false; return flush(); }
+      setSaveState('Guardado ✓');
+    }).catch(function (err) {
+      saving = false;
+      keys.forEach(function (k) { dirty[k] = true; });
+      setSaveState('Sin conexión — reintentando…', true);
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(flush, 4000);
+    });
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+  window.addEventListener('pagehide', function () {
+    var keys = Object.keys(dirty);
+    if (!keys.length || !window.fetch) return;
+    var patch = {}; keys.forEach(function (k) { patch[k] = data[k]; });
+    try { fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patch: patch }), keepalive: true }); } catch (e) {}
+  });
+
+  // ── Eventos ─────────────────────────────────────────────────────────────
+  function afterValueChange(rerender) {
+    ensureLists();
+    if (rerender) renderStep(true); else renderChips();
+    updateSubmitState();
+    scheduleSave();
+  }
+
+  var body = $('step-body');
+  body.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!el.dataset || !el.dataset.path || el.dataset.select) return;
+    setAt(el.dataset.path, el.value);
+    afterValueChange(false);
+  });
+  body.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.dataset && el.dataset.select) { setAt(el.dataset.path, el.value); afterValueChange(true); return; }
+    if (el.dataset && el.dataset.na) {
+      var key = el.dataset.na;
+      setAt(key, el.checked ? DS.NA : '');
+      var input = body.querySelector('[data-path="' + key + '"]');
+      if (input) { input.disabled = el.checked; if (el.checked) input.value = ''; }
+      afterValueChange(false);
+      return;
+    }
+    if (el.id === 'decl') { data.declaracion = el.checked ? 'si' : 'no'; dirty.declaracion = true; updateSubmitState(); scheduleSave(300); }
+  });
+  body.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('button') : null;
+    if (!el) return;
+    if (el.dataset.yn) { setAt(el.dataset.yn, el.dataset.v); afterValueChange(true); return; }
+    if (el.dataset.add) {
+      var arr = getAt(el.dataset.add); if (!Array.isArray(arr)) { arr = []; setAt(el.dataset.add, arr); }
+      arr.push({}); dirty[el.dataset.add.split('.')[0]] = true; afterValueChange(true); return;
+    }
+    if (el.dataset.remove) {
+      var list = getAt(el.dataset.remove);
+      if (Array.isArray(list)) { list.splice(parseInt(el.dataset.i, 10), 1); dirty[el.dataset.remove.split('.')[0]] = true; }
+      afterValueChange(true); return;
+    }
+    if (el.dataset.step) { go(parseInt(el.dataset.step, 10)); return; }
+    if (el.dataset.deldoc) {
+      if (!confirm('¿Eliminar este documento?')) return;
+      http('DELETE', API + '/documents/' + el.dataset.deldoc).then(function () {
+        docs = docs.filter(function (d) { return d.id !== el.dataset.deldoc; });
+        $('doc-list').innerHTML = docListHtml();
+      }).catch(function (err) { alert(err.message); });
+      return;
+    }
+    if (el.id === 'doc-upload') uploadDoc(el);
+  });
+  $('steps').addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-step]') : null;
+    if (el) go(parseInt(el.dataset.step, 10));
+  });
+
+  function uploadDoc(btn) {
+    var file = $('doc-file').files[0], msg = $('doc-msg');
+    if (!file) { msg.innerHTML = '<div class="msg err">Selecciona un archivo</div>'; return; }
+    var fd = new FormData(); fd.append('category', $('doc-cat').value); fd.append('file', file);
+    btn.disabled = true; btn.textContent = 'Subiendo…'; msg.innerHTML = '';
+    http('POST', API + '/documents', fd, true).then(function (d) {
+      docs.push(d.document); $('doc-list').innerHTML = docListHtml(); $('doc-file').value = '';
+      msg.innerHTML = '<div class="msg ok">Documento subido</div>';
+    }).catch(function (err) {
+      msg.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>';
+    }).then(function () { btn.disabled = false; btn.textContent = 'Subir documento'; });
+  }
+
+  function go(i) {
+    if (i < 0 || i >= steps.length) return;
+    flush();
+    stepIdx = i;
+    renderStep(false);
+  }
+  $('btn-back').addEventListener('click', function () { go(stepIdx - 1); });
+  $('btn-next').addEventListener('click', function () {
+    if (stepIdx < steps.length - 1) { go(stepIdx + 1); return; }
+    submit();
+  });
+
+  function submit() {
+    var btn = $('btn-next'), msg = $('submit-msg');
+    btn.disabled = true; btn.textContent = 'Enviando…'; msg.innerHTML = '';
+    clearTimeout(saveTimer);
+    var wait = function () { return saving ? new Promise(function (r) { setTimeout(r, 300); }).then(wait) : flush(); };
+    wait().then(function () { return http('POST', API + '/submit'); }).then(function () {
+      submittedAt = new Date().toISOString();
+      $('app').classList.add('hidden');
+      $('done-name').textContent = clientName;
+      $('done-screen').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    }).catch(function (err) {
+      msg.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>';
+      btn.disabled = false; btn.textContent = submittedAt ? 'Reenviar' : 'Enviar solicitud';
+    });
+  }
+  $('done-back').addEventListener('click', function () {
+    $('done-screen').classList.add('hidden'); $('app').classList.remove('hidden');
+    stepIdx = steps.length - 1; renderStep(false);
+  });
+
+  // ── Arranque ────────────────────────────────────────────────────────────
+  function fail(text) {
+    $('boot').classList.add('hidden'); $('error-text').textContent = text; $('error-screen').classList.remove('hidden');
+  }
+  function datalistsHtml() {
+    return Object.keys(schema.datalists).map(function (k) {
+      return '<datalist id="dl_' + k + '">' + schema.datalists[k].map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+    }).join('');
+  }
+
+  Promise.all([http('GET', '/api/visa/schema'), http('GET', API)]).then(function (r) {
+    schema = r[0];
+    var st = r[1];
+    clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt;
+    $('datalists').innerHTML = datalistsHtml();
+    buildSteps();
+    ensureLists();
+    $('boot').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    renderStep(false);
+    setSaveState('');
+  }).catch(function (err) {
+    fail(err.status === 404 ? err.message : 'No pudimos cargar tu solicitud. Revisa tu conexión e intenta de nuevo.');
+  });
+})();
+</script>
+</body>
+</html>

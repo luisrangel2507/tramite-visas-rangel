@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { Pool } = require('pg');
 
 const connectionString = process.env.DATABASE_URL;
@@ -7,7 +9,14 @@ if (!connectionString) {
 
 const pool = new Pool({
   connectionString,
-  ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false },
+  ssl: /localhost|127\.0\.0\.1/.test(connectionString) ? false : { rejectUnauthorized: false },
 });
 
-module.exports = { pool };
+// Crea las tablas que falten (schema.sql es idempotente), para que no haya
+// que correr SQL a mano al desplegar.
+async function ensureSchema() {
+  const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  await pool.query(sql);
+}
+
+module.exports = { pool, ensureSchema };

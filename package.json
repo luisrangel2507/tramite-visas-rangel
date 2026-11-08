@@ -1,9 +1,10 @@
 {
   "name": "tramite-visas-rangel",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Gestión de trámite de visas — Ing. Luis Eduardo Rangel Llanes",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/logic.test.js"
   },
   "dependencies": {
     "content-disposition": "^0.5.4",

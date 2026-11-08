@@ -1,167 +1,222 @@
-// Gestión de Trámite de Visas — módulo de backend.
-// Almacenamiento en Postgres (Supabase u otro proveedor) vía DATABASE_URL,
-// para que los datos sobrevivan a los redeploys. Módulo aparte para no
-// inflar server.js.
+// Gestión de Trámite de Visas — API.
+//   · Cliente: entra con un enlace secreto (/s/<token>), sin cuenta ni contraseña.
+//   · Administrador (Ing. Rangel): inicia sesión, crea solicitudes/enlaces y ve las respuestas.
+// Almacenamiento en Postgres (Supabase u otro) vía DATABASE_URL.
 
 const express = require('express');
 const crypto = require('crypto');
 const multer = require('multer');
 const contentDisposition = require('content-disposition');
 const { pool } = require('./db');
-const { SECTIONS, DOCUMENT_CATEGORIES, STATUS_OPTIONS } = require('./visa-schema');
+const { SECTIONS, DATALISTS, STATUS_OPTIONS, DOCUMENT_CATEGORIES } = require('./ds160-schema');
+const DS160 = require('./public/ds160-logic');
 
 const DEFAULT_STATUS = STATUS_OPTIONS[0].value;
+const RECEIVED_STATUS = 'formulario_recibido';
 const ADMIN_EMAIL = (process.env.VISA_ADMIN_EMAIL || 'luisrangel2507@gmail.com').toLowerCase();
+const EXTRA_KEYS = ['declaracion']; // claves fuera del esquema que el cliente puede guardar
+const MAX_DOCS_PER_APPLICATION = 20;
+const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
-function wrap(fn) {
+function wrap(fn, publicRoute) {
   return (req, res) => {
     fn(req, res).catch((err) => {
       console.error(err);
-      res.status(500).json({ error: 'Error de servidor: ' + err.message });
+      res.status(500).json({ error: publicRoute ? 'Error de servidor. Intenta de nuevo en unos minutos.' : 'Error de servidor: ' + err.message });
     });
   };
 }
+const pub = (fn) => wrap(fn, true);
 
-// ── Acceso a datos ───────────────────────────────────────────────────────────
-async function findUserByEmail(email) {
-  const { rows } = await pool.query('select * from users where email = $1', [email]);
-  return rows[0] || null;
-}
-async function findUserById(id) {
-  const { rows } = await pool.query('select * from users where id = $1', [id]);
-  return rows[0] || null;
-}
-async function findUserByToken(token) {
-  const { rows } = await pool.query(
-    'select u.* from tokens t join users u on u.id = t.user_id where t.token = $1',
-    [token]
-  );
-  return rows[0] || null;
-}
-async function insertUser(user) {
-  await pool.query(
-    'insert into users (id, name, email, salt, hash, is_admin, created_at) values ($1,$2,$3,$4,$5,$6,$7)',
-    [user.id, user.name, user.email, user.salt, user.hash, user.isAdmin, user.createdAt]
-  );
-}
-async function updateUserPassword(id, salt, hash) {
-  await pool.query('update users set salt = $1, hash = $2 where id = $3', [salt, hash, id]);
-}
-async function listClients() {
-  const { rows } = await pool.query('select * from users where is_admin = false order by created_at asc');
-  return rows;
-}
-async function insertToken(token, userId) {
-  await pool.query('insert into tokens (token, user_id) values ($1,$2)', [token, userId]);
-}
-async function deleteToken(token) {
-  await pool.query('delete from tokens where token = $1', [token]);
-}
+// ── Utilidades ───────────────────────────────────────────────────────────────
+function newToken() { return crypto.randomBytes(18).toString('base64url'); }
+function newId() { return crypto.randomBytes(12).toString('hex'); }
 
-async function getForm(userId) {
-  const { rows } = await pool.query('select * from forms where user_id = $1', [userId]);
-  if (rows[0]) return rows[0];
-  await pool.query(
-    'insert into forms (user_id, data, log, updated_at) values ($1, $2, $3, null) on conflict (user_id) do nothing',
-    [userId, '{}', '[]']
-  );
-  return { user_id: userId, data: {}, log: [], updated_at: null };
-}
-async function saveFormData(userId, data, updatedAt) {
-  await getForm(userId); // asegura que exista la fila
-  await pool.query('update forms set data = $1, updated_at = $2 where user_id = $3', [
-    JSON.stringify(data), updatedAt, userId,
-  ]);
-}
-async function pushLog(userId, action, detail) {
-  const form = await getForm(userId);
-  const log = Array.isArray(form.log) ? form.log : [];
-  log.push({ ts: new Date().toISOString(), action, detail: detail || '' });
-  const trimmed = log.length > 500 ? log.slice(-500) : log;
-  await pool.query('update forms set log = $1 where user_id = $2', [JSON.stringify(trimmed), userId]);
-}
-
-async function getStatus(userId) {
-  const { rows } = await pool.query('select * from statuses where user_id = $1', [userId]);
-  if (rows[0]) return { status: rows[0].status, note: rows[0].note, updatedAt: rows[0].updated_at };
-  return { status: DEFAULT_STATUS, note: '', updatedAt: null };
-}
-async function setStatus(userId, status, note) {
-  const updatedAt = new Date().toISOString();
-  await pool.query(
-    `insert into statuses (user_id, status, note, updated_at) values ($1,$2,$3,$4)
-     on conflict (user_id) do update set status = excluded.status, note = excluded.note, updated_at = excluded.updated_at`,
-    [userId, status, note, updatedAt]
-  );
-  return { status, note, updatedAt };
-}
-
-function hashPassword(password, salt) {
-  return crypto.scryptSync(password, salt, 64).toString('hex');
-}
+function hashPassword(password, salt) { return crypto.scryptSync(password, salt, 64).toString('hex'); }
 function verifyPassword(password, salt, hash) {
   const test = crypto.scryptSync(password, salt, 64);
   const stored = Buffer.from(hash, 'hex');
-  if (test.length !== stored.length) return false;
-  return crypto.timingSafeEqual(test, stored);
+  return test.length === stored.length && crypto.timingSafeEqual(test, stored);
 }
-function publicUser(u) {
-  return { id: u.id, name: u.name, email: u.email, isAdmin: !!u.is_admin, createdAt: u.created_at };
-}
+function publicUser(u) { return { id: u.id, name: u.name, email: u.email, isAdmin: !!u.is_admin }; }
+
 function mapDoc(d) {
-  return {
-    id: d.id, category: d.category, originalName: d.original_name,
-    mimetype: d.mimetype, size: Number(d.size), uploadedAt: d.uploaded_at,
-  };
+  return { id: d.id, category: d.category, originalName: d.original_name, mimetype: d.mimetype, size: Number(d.size), uploadedAt: d.uploaded_at };
+}
+function statusOf(a) { return { status: a.status, note: a.status_note, updatedAt: a.status_updated_at }; }
+
+async function pushLog(appId, action, detail) {
+  const entry = JSON.stringify([{ ts: new Date().toISOString(), action, detail: detail || '' }]);
+  await pool.query(`update applications set log = coalesce(log, '[]'::jsonb) || $2::jsonb where id = $1`, [appId, entry]);
 }
 
-const TEMP_PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-function generateTempPassword() {
-  const bytes = crypto.randomBytes(10);
-  let out = '';
-  for (let i = 0; i < bytes.length; i++) out += TEMP_PASSWORD_CHARS[bytes[i] % TEMP_PASSWORD_CHARS.length];
-  return out;
+async function findApplicationByToken(token) {
+  if (!TOKEN_RE.test(String(token || ''))) return null;
+  const { rows } = await pool.query('select * from applications where token = $1', [token]);
+  return rows[0] || null;
+}
+async function findApplicationById(id) {
+  const { rows } = await pool.query('select * from applications where id = $1', [id]);
+  return rows[0] || null;
+}
+async function listDocs(appId) {
+  const { rows } = await pool.query(
+    'select id, category, original_name, mimetype, size, uploaded_at from application_documents where application_id = $1 order by uploaded_at asc',
+    [appId]
+  );
+  return rows.map(mapDoc);
 }
 
-function computeCompletion(data) {
-  const total = SECTIONS.reduce((n, s) => n + s.fields.length, 0);
-  let filled = 0;
-  for (const s of SECTIONS) {
-    for (const f of s.fields) {
-      const v = (data || {})[`${s.id}.${f.id}`];
-      if (v !== undefined && v !== null && String(v).trim() !== '') filled++;
-    }
+// Verifica el contenido real del archivo (no solo el tipo que declara el navegador).
+function looksLikeAllowedFile(buf) {
+  if (!buf || buf.length < 12) return false;
+  const head = buf.subarray(0, 12);
+  const is = (...bytes) => bytes.every((b, i) => head[i] === b);
+  return (
+    is(0x25, 0x50, 0x44, 0x46) ||                       // PDF
+    is(0xff, 0xd8, 0xff) ||                             // JPEG
+    is(0x89, 0x50, 0x4e, 0x47) ||                       // PNG
+    is(0x47, 0x49, 0x46, 0x38) ||                       // GIF
+    (is(0x52, 0x49, 0x46, 0x46) && head.subarray(8, 12).toString() === 'WEBP') ||
+    head.subarray(4, 8).toString() === 'ftyp'           // HEIC/HEIF
+  );
+}
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+  fileFilter(req, file, cb) {
+    const ok = /^image\/|^application\/pdf$/.test(file.mimetype);
+    cb(ok ? null : new Error('Tipo de archivo no permitido (solo imágenes o PDF)'), ok);
+  },
+});
+
+function sendDocument(res, entry) {
+  res.set('Content-Type', entry.mimetype);
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Content-Disposition', contentDisposition(entry.original_name, { type: 'attachment' }));
+  res.send(entry.content);
+}
+
+const router = express.Router();
+
+// ── Esquema (público, para renderizar el formulario) ─────────────────────────
+router.get('/schema', (req, res) => {
+  res.json({ sections: SECTIONS, datalists: DATALISTS, statusOptions: STATUS_OPTIONS, documentCategories: DOCUMENT_CATEGORIES });
+});
+
+// ══ CLIENTE (enlace secreto) ═════════════════════════════════════════════════
+async function loadByLink(req, res, next) {
+  try {
+    const a = await findApplicationByToken(req.params.token);
+    if (!a) return res.status(404).json({ error: 'Este enlace no es válido o ya no está activo. Pide uno nuevo a tu asesor.' });
+    req.application = a;
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error de servidor. Intenta de nuevo en unos minutos.' });
   }
-  return { filled, total, pct: total ? Math.round((filled / total) * 100) : 0 };
-}
-async function completion(userId) {
-  const form = await getForm(userId);
-  return computeCompletion(form.data);
 }
 
-async function createAccount({ name, email, password, isAdmin, createdDetail }) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const user = {
-    id: crypto.randomBytes(12).toString('hex'),
-    name: String(name).trim(),
-    email,
-    salt,
-    hash: hashPassword(password, salt),
-    isAdmin: !!isAdmin,
-    createdAt: new Date().toISOString(),
-  };
-  await insertUser(user);
-  await getForm(user.id);
-  await pushLog(user.id, 'account_created', createdDetail || '');
-  await setStatus(user.id, DEFAULT_STATUS, '');
-  return findUserById(user.id);
-}
+router.get('/s/:token', loadByLink, pub(async (req, res) => {
+  const a = req.application;
+  await pool.query('update applications set last_opened_at = now() where id = $1', [a.id]);
+  res.json({
+    clientName: a.client_name,
+    data: a.data || {},
+    status: statusOf(a),
+    submittedAt: a.submitted_at,
+    updatedAt: a.updated_at,
+    documents: await listDocs(a.id),
+  });
+}));
 
+router.put('/s/:token', loadByLink, pub(async (req, res) => {
+  const patch = DS160.sanitizePatch(SECTIONS, (req.body || {}).patch, EXTRA_KEYS);
+  if (!Object.keys(patch).length) return res.json({ ok: true, updatedAt: req.application.updated_at });
+  const { rows } = await pool.query(
+    `update applications set data = coalesce(data, '{}'::jsonb) || $2::jsonb, updated_at = now()
+     where id = $1 returning data, updated_at`,
+    [req.application.id, JSON.stringify(patch)]
+  );
+  const c = DS160.completion(SECTIONS, rows[0].data);
+  res.json({ ok: true, updatedAt: rows[0].updated_at, completion: { filled: c.filled, total: c.total, pct: c.pct, bySection: c.bySection } });
+}));
+
+router.post('/s/:token/submit', loadByLink, pub(async (req, res) => {
+  const a = req.application;
+  const c = DS160.completion(SECTIONS, a.data);
+  if (c.missing.length) {
+    return res.status(422).json({ error: 'Aún faltan campos por llenar.', missing: c.missing.slice(0, 60), totalMissing: c.missing.length });
+  }
+  if ((a.data || {}).declaracion !== 'si') {
+    return res.status(422).json({ error: 'Debes aceptar la declaración final para enviar.', missing: [] });
+  }
+  await pool.query(
+    `update applications set submitted_at = now(),
+       status = case when status = $2 then $3 else status end,
+       status_updated_at = case when status = $2 then now() else status_updated_at end
+     where id = $1`,
+    [a.id, DEFAULT_STATUS, RECEIVED_STATUS]
+  );
+  await pushLog(a.id, 'submitted', a.submitted_at ? 'Reenviado por el cliente' : 'Formulario enviado por el cliente');
+  res.json({ ok: true });
+}));
+
+router.get('/s/:token/documents', loadByLink, pub(async (req, res) => {
+  res.json({ documents: await listDocs(req.application.id) });
+}));
+
+router.post('/s/:token/documents', loadByLink, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    try {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'Falta el archivo' });
+      if (!looksLikeAllowedFile(req.file.buffer)) {
+        return res.status(400).json({ error: 'El archivo no parece una imagen o PDF válido' });
+      }
+      const a = req.application;
+      const { rows: cnt } = await pool.query('select count(*)::int as n from application_documents where application_id = $1', [a.id]);
+      if (cnt[0].n >= MAX_DOCS_PER_APPLICATION) {
+        return res.status(400).json({ error: `Máximo ${MAX_DOCS_PER_APPLICATION} documentos por solicitud` });
+      }
+      const category = DOCUMENT_CATEGORIES.some((c) => c.value === req.body.category) ? req.body.category : 'otro';
+      const id = crypto.randomBytes(8).toString('hex');
+      const name = String(req.file.originalname || 'documento').slice(0, 200);
+      await pool.query(
+        `insert into application_documents (id, application_id, category, original_name, mimetype, size, content)
+         values ($1,$2,$3,$4,$5,$6,$7)`,
+        [id, a.id, category, name, req.file.mimetype, req.file.size, req.file.buffer]
+      );
+      await pushLog(a.id, 'document_uploaded', `${name} (${category})`);
+      res.json({ ok: true, document: { id, category, originalName: name, mimetype: req.file.mimetype, size: req.file.size, uploadedAt: new Date().toISOString() } });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Error de servidor. Intenta de nuevo.' });
+    }
+  });
+});
+
+router.delete('/s/:token/documents/:id', loadByLink, pub(async (req, res) => {
+  const { rows } = await pool.query(
+    'delete from application_documents where id = $1 and application_id = $2 returning original_name',
+    [req.params.id, req.application.id]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  await pushLog(req.application.id, 'document_deleted', rows[0].original_name);
+  res.json({ ok: true });
+}));
+
+// ══ ADMINISTRADOR ════════════════════════════════════════════════════════════
 async function auth(req, res, next) {
   try {
     const token = req.headers['x-auth-token'];
-    const user = token ? await findUserByToken(token) : null;
-    if (!user) return res.status(401).json({ error: 'No autorizado' });
+    let user = null;
+    if (token) {
+      const { rows } = await pool.query('select u.* from tokens t join users u on u.id = t.user_id where t.token = $1', [token]);
+      user = rows[0] || null;
+    }
+    if (!user || !user.is_admin) return res.status(401).json({ error: 'No autorizado' });
     req.user = user;
     req.token = token;
     next();
@@ -170,65 +225,54 @@ async function auth(req, res, next) {
     res.status(500).json({ error: 'Error de servidor: ' + err.message });
   }
 }
-function requireAdmin(req, res, next) {
-  if (!req.user.is_admin) return res.status(403).json({ error: 'Solo administrador' });
-  next();
+
+async function startSession(userId) {
+  const token = crypto.randomBytes(24).toString('hex');
+  await pool.query('insert into tokens (token, user_id) values ($1,$2)', [token, userId]);
+  return token;
 }
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
-  fileFilter(req, file, cb) {
-    const ok = /^image\/|^application\/pdf$/.test(file.mimetype);
-    cb(ok ? null : new Error('Tipo de archivo no permitido (solo imágenes o PDF)'), ok);
-  },
-});
-
-const router = express.Router();
-
-// ── Esquema (público, para renderizar el formulario) ───────────────────────
-router.get('/schema', (req, res) => {
-  res.json({ sections: SECTIONS, documentCategories: DOCUMENT_CATEGORIES, statusOptions: STATUS_OPTIONS });
-});
-
-// ── Registro / Login ────────────────────────────────────────────────────────
 router.post('/register', wrap(async (req, res) => {
   const { name, email, password } = req.body || {};
-  if (!name || !email || !password || password.length < 6) {
+  if (!name || !email || !password || String(password).length < 6) {
     return res.status(400).json({ error: 'Nombre, correo y contraseña (mínimo 6 caracteres) son obligatorios' });
   }
   const emailLc = String(email).trim().toLowerCase();
   if (emailLc !== ADMIN_EMAIL) {
-    return res.status(403).json({ error: 'El registro está reservado al administrador. Pide al Ing. Rangel que te cree tu cuenta.' });
+    return res.status(403).json({ error: 'El registro está reservado al administrador.' });
   }
-  if (await findUserByEmail(emailLc)) {
-    return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
-  }
-  const user = await createAccount({ name, email: emailLc, password, isAdmin: true });
-  const token = crypto.randomBytes(24).toString('hex');
-  await insertToken(token, user.id);
-  res.json({ ok: true, token, user: publicUser(user) });
+  const existing = await pool.query('select 1 from users where email = $1', [emailLc]);
+  if (existing.rowCount) return res.status(409).json({ error: 'Ya existe una cuenta con ese correo. Inicia sesión.' });
+  const salt = crypto.randomBytes(16).toString('hex');
+  const user = { id: newId(), name: String(name).trim(), email: emailLc, salt };
+  await pool.query(
+    'insert into users (id, name, email, salt, hash, is_admin) values ($1,$2,$3,$4,$5,true)',
+    [user.id, user.name, user.email, salt, hashPassword(String(password), salt)]
+  );
+  res.json({ ok: true, token: await startSession(user.id), user: { id: user.id, name: user.name, email: user.email, isAdmin: true } });
 }));
 
 router.post('/login', wrap(async (req, res) => {
   const { email, password } = req.body || {};
   const emailLc = String(email || '').trim().toLowerCase();
-  const user = await findUserByEmail(emailLc);
-  if (!user || !verifyPassword(password || '', user.salt, user.hash)) {
+  const { rows } = await pool.query('select * from users where email = $1', [emailLc]);
+  const user = rows[0];
+  if (!user || !verifyPassword(String(password || ''), user.salt, user.hash)) {
     return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
   }
-  const token = crypto.randomBytes(24).toString('hex');
-  await insertToken(token, user.id);
-  res.json({ ok: true, token, user: publicUser(user) });
+  if (!user.is_admin) {
+    return res.status(403).json({ error: 'Este acceso es solo para el administrador. Los clientes entran con el enlace que les envió su asesor.' });
+  }
+  res.json({ ok: true, token: await startSession(user.id), user: publicUser(user) });
 }));
 
 router.post('/logout', auth, wrap(async (req, res) => {
-  await deleteToken(req.token);
+  await pool.query('delete from tokens where token = $1', [req.token]);
   res.json({ ok: true });
 }));
 
 router.get('/me', auth, wrap(async (req, res) => {
-  res.json({ user: publicUser(req.user), completion: await completion(req.user.id), status: await getStatus(req.user.id) });
+  res.json({ user: publicUser(req.user) });
 }));
 
 router.put('/password', auth, wrap(async (req, res) => {
@@ -236,179 +280,101 @@ router.put('/password', auth, wrap(async (req, res) => {
   if (!newPassword || String(newPassword).length < 6) {
     return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
   }
-  if (!verifyPassword(currentPassword || '', req.user.salt, req.user.hash)) {
+  if (!verifyPassword(String(currentPassword || ''), req.user.salt, req.user.hash)) {
     return res.status(401).json({ error: 'La contraseña actual no es correcta' });
   }
   const salt = crypto.randomBytes(16).toString('hex');
-  await updateUserPassword(req.user.id, salt, hashPassword(newPassword, salt));
-  await pushLog(req.user.id, 'password_changed', '');
+  await pool.query('update users set salt = $1, hash = $2 where id = $3', [salt, hashPassword(String(newPassword), salt), req.user.id]);
   res.json({ ok: true });
 }));
 
-// ── Formulario ───────────────────────────────────────────────────────────────
-router.get('/form', auth, wrap(async (req, res) => {
-  const f = await getForm(req.user.id);
-  const log = Array.isArray(f.log) ? f.log : [];
-  res.json({ data: f.data || {}, updatedAt: f.updated_at, log: log.slice(-100).reverse(), completion: computeCompletion(f.data) });
-}));
+function summarize(a, docCount) {
+  const c = DS160.completion(SECTIONS, a.data);
+  return {
+    id: a.id, token: a.token, clientName: a.client_name, note: a.client_note,
+    status: statusOf(a), completion: { pct: c.pct, filled: c.filled, total: c.total },
+    documentCount: docCount, createdAt: a.created_at, updatedAt: a.updated_at,
+    submittedAt: a.submitted_at, lastOpenedAt: a.last_opened_at,
+  };
+}
 
-router.get('/log', auth, wrap(async (req, res) => {
-  const f = await getForm(req.user.id);
-  const log = Array.isArray(f.log) ? f.log : [];
-  res.json({ log: log.slice(-100).reverse() });
-}));
-
-router.post('/form', auth, wrap(async (req, res) => {
-  const { data, sectionTitle } = req.body || {};
-  if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    return res.status(400).json({ error: 'Datos de formulario inválidos' });
-  }
-  const f = await getForm(req.user.id);
-  const merged = Object.assign({}, f.data);
-  let changed = 0;
-  for (const [k, v] of Object.entries(data)) {
-    if (typeof k !== 'string' || k.length > 120) continue;
-    if (v !== null && typeof v !== 'string' && typeof v !== 'number') continue;
-    merged[k] = v;
-    changed++;
-  }
-  const updatedAt = new Date().toISOString();
-  await saveFormData(req.user.id, merged, updatedAt);
-  await pushLog(req.user.id, 'form_saved', sectionTitle ? `Sección: ${sectionTitle} (${changed} campos)` : `${changed} campos`);
-  res.json({ ok: true, updatedAt, completion: computeCompletion(merged) });
-}));
-
-// ── Documentos ───────────────────────────────────────────────────────────────
-router.get('/documents', auth, wrap(async (req, res) => {
+router.get('/admin/applications', auth, wrap(async (req, res) => {
   const { rows } = await pool.query(
-    'select id, category, original_name, mimetype, size, uploaded_at from documents where user_id = $1 order by uploaded_at asc',
-    [req.user.id]
+    `select a.*, (select count(*)::int from application_documents d where d.application_id = a.id) as doc_count
+     from applications a order by a.created_at desc`
   );
-  res.json({ documents: rows.map(mapDoc) });
+  res.json({ applications: rows.map((a) => summarize(a, a.doc_count)) });
 }));
 
-router.post('/documents', auth, (req, res) => {
-  upload.single('file')(req, res, async (err) => {
-    try {
-      if (err) return res.status(400).json({ error: err.message });
-      if (!req.file) return res.status(400).json({ error: 'Falta el archivo' });
-      const category = String(req.body.category || 'otro');
-      const id = crypto.randomBytes(8).toString('hex');
-      const uploadedAt = new Date().toISOString();
-      await pool.query(
-        `insert into documents (id, user_id, category, original_name, mimetype, size, content, uploaded_at)
-         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [id, req.user.id, category, req.file.originalname, req.file.mimetype, req.file.size, req.file.buffer, uploadedAt]
-      );
-      const entry = { id, category, originalName: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size, uploadedAt };
-      await pushLog(req.user.id, 'document_uploaded', `${entry.originalName} (${category})`);
-      res.json({ ok: true, document: entry });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: 'Error de servidor' });
-    }
-  });
-});
-
-router.get('/documents/:id/download', auth, wrap(async (req, res) => {
-  const { rows } = await pool.query(
-    'select * from documents where id = $1 and user_id = $2',
-    [req.params.id, req.user.id]
-  );
-  const entry = rows[0];
-  if (!entry) return res.status(404).json({ error: 'No encontrado' });
-  res.set('Content-Type', entry.mimetype);
-  res.set('Content-Disposition', contentDisposition(entry.original_name));
-  res.send(entry.content);
+router.post('/admin/applications', auth, wrap(async (req, res) => {
+  const name = String((req.body || {}).name || '').trim().slice(0, 150);
+  const note = String((req.body || {}).note || '').trim().slice(0, 300);
+  if (!name) return res.status(400).json({ error: 'El nombre del cliente es obligatorio' });
+  const id = newId();
+  const token = newToken();
+  await pool.query('insert into applications (id, token, client_name, client_note) values ($1,$2,$3,$4)', [id, token, name, note]);
+  await pushLog(id, 'link_created', 'Solicitud creada por el administrador');
+  res.json({ ok: true, application: summarize(await findApplicationById(id), 0) });
 }));
 
-router.delete('/documents/:id', auth, wrap(async (req, res) => {
-  const { rows } = await pool.query(
-    'delete from documents where id = $1 and user_id = $2 returning original_name',
-    [req.params.id, req.user.id]
-  );
-  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
-  await pushLog(req.user.id, 'document_deleted', rows[0].original_name);
-  res.json({ ok: true });
-}));
-
-// ── Administración (Ing. Rangel) ─────────────────────────────────────────────
-router.post('/admin/users', auth, requireAdmin, wrap(async (req, res) => {
-  const { name, email } = req.body || {};
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
-  }
-  const emailLc = String(email).trim().toLowerCase();
-  if (await findUserByEmail(emailLc)) {
-    return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
-  }
-  const tempPassword = generateTempPassword();
-  const user = await createAccount({
-    name, email: emailLc, password: tempPassword, isAdmin: false,
-    createdDetail: 'Cuenta creada por el administrador',
-  });
-  res.json({ ok: true, user: publicUser(user), tempPassword });
-}));
-
-router.get('/admin/users', auth, requireAdmin, wrap(async (req, res) => {
-  const clients = await listClients();
-  const list = [];
-  for (const u of clients) {
-    const form = await getForm(u.id);
-    const { rows } = await pool.query('select count(*)::int as count from documents where user_id = $1', [u.id]);
-    list.push({
-      ...publicUser(u),
-      completion: computeCompletion(form.data),
-      documentCount: rows[0].count,
-      formUpdatedAt: form.updated_at,
-      status: await getStatus(u.id),
-    });
-  }
-  res.json({ users: list });
-}));
-
-router.get('/admin/users/:id', auth, requireAdmin, wrap(async (req, res) => {
-  const u = await findUserById(req.params.id);
-  if (!u) return res.status(404).json({ error: 'No encontrado' });
-  const f = await getForm(u.id);
-  const { rows: docRows } = await pool.query(
-    'select id, category, original_name, mimetype, size, uploaded_at from documents where user_id = $1 order by uploaded_at asc',
-    [u.id]
-  );
-  const log = Array.isArray(f.log) ? f.log : [];
+router.get('/admin/applications/:id', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const c = DS160.completion(SECTIONS, a.data);
+  const log = Array.isArray(a.log) ? a.log : [];
   res.json({
-    user: publicUser(u),
-    data: f.data || {},
-    updatedAt: f.updated_at,
+    application: summarize(a, (await listDocs(a.id)).length),
+    data: a.data || {},
+    documents: await listDocs(a.id),
     log: log.slice(-200).reverse(),
-    documents: docRows.map(mapDoc),
-    completion: computeCompletion(f.data),
-    status: await getStatus(u.id),
+    missing: c.missing,
   });
 }));
 
-router.put('/admin/users/:id/status', auth, requireAdmin, wrap(async (req, res) => {
-  const u = await findUserById(req.params.id);
-  if (!u) return res.status(404).json({ error: 'No encontrado' });
+router.put('/admin/applications/:id', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const name = String((req.body || {}).name || a.client_name).trim().slice(0, 150);
+  const note = String((req.body || {}).note ?? a.client_note).trim().slice(0, 300);
+  if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
+  await pool.query('update applications set client_name = $2, client_note = $3 where id = $1', [a.id, name, note]);
+  res.json({ ok: true });
+}));
+
+router.put('/admin/applications/:id/status', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
   const { status, note } = req.body || {};
   const option = STATUS_OPTIONS.find((s) => s.value === status);
   if (!option) return res.status(400).json({ error: 'Estado inválido' });
   const cleanNote = typeof note === 'string' ? note.trim().slice(0, 500) : '';
-  const saved = await setStatus(u.id, status, cleanNote);
-  await pushLog(u.id, 'status_changed', option.label + (cleanNote ? ` — ${cleanNote}` : ''));
-  res.json({ ok: true, status: saved });
+  await pool.query('update applications set status = $2, status_note = $3, status_updated_at = now() where id = $1', [a.id, status, cleanNote]);
+  await pushLog(a.id, 'status_changed', option.label + (cleanNote ? ` — ${cleanNote}` : ''));
+  res.json({ ok: true });
 }));
 
-router.get('/admin/users/:id/documents/:docId/download', auth, requireAdmin, wrap(async (req, res) => {
+router.post('/admin/applications/:id/regenerate-link', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const token = newToken();
+  await pool.query('update applications set token = $2 where id = $1', [a.id, token]);
+  await pushLog(a.id, 'link_regenerated', 'El enlace anterior dejó de funcionar');
+  res.json({ ok: true, token });
+}));
+
+router.delete('/admin/applications/:id', auth, wrap(async (req, res) => {
+  const r = await pool.query('delete from applications where id = $1', [req.params.id]);
+  if (!r.rowCount) return res.status(404).json({ error: 'No encontrado' });
+  res.json({ ok: true });
+}));
+
+router.get('/admin/applications/:id/documents/:docId/download', auth, wrap(async (req, res) => {
   const { rows } = await pool.query(
-    'select * from documents where id = $1 and user_id = $2',
+    'select * from application_documents where id = $1 and application_id = $2',
     [req.params.docId, req.params.id]
   );
-  const entry = rows[0];
-  if (!entry) return res.status(404).json({ error: 'No encontrado' });
-  res.set('Content-Type', entry.mimetype);
-  res.set('Content-Disposition', contentDisposition(entry.original_name));
-  res.send(entry.content);
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  sendDocument(res, rows[0]);
 }));
 
 module.exports = router;
