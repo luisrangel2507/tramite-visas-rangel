@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Gestión de Trámite de Visas — Rangel</title>
+<meta name="robots" content="noindex, nofollow">
+<title>Visapp — Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +13,7 @@
   :root {
     --bg: #F5F2EA; --panel: #FFFFFF; --panel-soft: #FBF9F4;
     --border: rgba(22,33,61,.10); --border2: rgba(22,33,61,.20);
-    --text: #16213D; --muted: #5C6B85; --dim: #97A2B8;
+    --text: #16213D; --muted: #5C6B85; --dim: #7C879C;
     --navy: #16213D; --navy-deep: #0E1729;
     --gold: #A8791F; --gold-ink: #7A5A16; --gold-bg: rgba(168,121,31,.12); --gold-soft: #D9B15C;
     --green: #1E8E5A; --red: #C0442D; --amber: #B15F14; --amber-bg: rgba(177,95,20,.12);
@@ -20,894 +21,464 @@
     --shadow-sm: 0 1px 2px rgba(22,33,61,.06);
     --shadow-md: 0 14px 34px -16px rgba(22,33,61,.28), 0 2px 8px rgba(22,33,61,.06);
   }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-  @keyframes msgIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-  @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  body {
-    font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
-    min-height: 100dvh; line-height: 1.45; -webkit-font-smoothing: antialiased;
-  }
-  body::before {
-    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(168,121,31,.09) 0%, transparent 60%);
-  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(168,121,31,.09) 0%, transparent 60%); }
   a { color: var(--gold-ink); }
-  .btn:focus-visible, .tab:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
-    outline: 2px solid var(--gold); outline-offset: 2px;
-  }
-  #boot-loader {
-    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
-    background: var(--bg); transition: opacity .35s var(--ease), visibility .35s;
-  }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .hidden { display: none !important; }
+
+  #boot-loader { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: var(--bg); transition: opacity .35s var(--ease), visibility .35s; }
   #boot-loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-  .loader-ring {
-    width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--border2);
-    border-top-color: var(--gold); animation: spin .8s linear infinite;
-  }
-  .btn-spinner {
-    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
-    animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 7px;
-  }
-  .brand-serif { font-family: 'Fraunces', serif; }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px calc(80px + env(safe-area-inset-bottom)); position: relative; z-index: 1; }
-  .topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: calc(14px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 14px calc(20px + env(safe-area-inset-left));
-    position: sticky; top: 0;
-    background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35); z-index: 20;
-  }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16.5px; color: #EFE7D6; }
-  .brand-mark {
-    width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(155deg, var(--gold-soft), var(--gold));
-    color: var(--navy-deep); display: flex; align-items: center; justify-content: center;
-    font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; letter-spacing: -.5px; flex-shrink: 0;
-  }
-  .brand-text { font-family: 'Fraunces', serif; letter-spacing: -.2px; }
-  .brand-text span { color: var(--gold-soft); }
-  .brand-text small { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; color: #8892A8; }
-  .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #A9B2C6; }
-  .btn {
-    font-family: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--border2);
-    background: var(--panel); color: var(--text); padding: 10px 16px; border-radius: 10px;
-    cursor: pointer; transition: transform .12s var(--ease), background .15s, border-color .15s, box-shadow .15s;
-    box-shadow: var(--shadow-sm);
-  }
-  .btn:active { transform: scale(.96); }
+  .loader-ring { width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--gold); animation: spin .8s linear infinite; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35);
+    padding: calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 12px calc(18px + env(safe-area-inset-left)); }
+  .brand { display: flex; align-items: center; gap: 10px; color: #EFE7D6; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px; }
+  .brand-mark { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(155deg, var(--gold-soft), var(--gold)); color: var(--navy-deep); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .brand span { color: var(--gold-soft); }
+  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #A9B2C6; }
+  .wrap { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 22px 16px 80px; }
+
+  .btn { font: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--border2); background: var(--panel); color: var(--text); padding: 10px 16px; border-radius: 10px; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform .12s var(--ease), border-color .15s; }
+  .btn:active { transform: scale(.97); }
   .btn:hover { border-color: var(--gold); }
   .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
   .btn-primary:hover { background: var(--navy-deep); border-color: var(--gold-soft); }
-  .btn-ghost { background: transparent; border-color: transparent; color: #A9B2C6; padding: 8px 10px; box-shadow: none; }
+  .btn-wa { background: #1FA855; border-color: #1FA855; color: #fff; }
+  .btn-wa:hover { background: #178A45; border-color: #178A45; }
+  .btn-ghost { background: transparent; border-color: transparent; color: #A9B2C6; box-shadow: none; padding: 8px 10px; }
   .btn-ghost:hover { color: #fff; border-color: transparent; }
   .btn-danger { border-color: rgba(192,68,45,.35); color: var(--red); background: rgba(192,68,45,.07); }
   .btn-sm { padding: 7px 12px; font-size: 12.5px; }
   .btn[disabled] { opacity: .5; cursor: default; }
 
-  /* ── AUTH ── */
-  #auth-screen { max-width: 440px; margin: 7vh auto 0; padding: 0 18px; }
-  .auth-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 30px;
-    box-shadow: var(--shadow-md); text-align: center; animation: fadeUp .5s var(--ease);
-  }
-  .auth-mark {
-    width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
-    background: linear-gradient(155deg, var(--navy), var(--navy-deep));
-    color: var(--gold-soft); display: flex; align-items: center; justify-content: center;
-    font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; letter-spacing: -.5px;
-    box-shadow: var(--shadow-md);
-  }
-  .auth-title { font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; margin-bottom: 8px; letter-spacing: -.3px; }
+  .auth-card { max-width: 440px; margin: 8vh auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 28px; box-shadow: var(--shadow-md); text-align: center; animation: fadeUp .5s var(--ease); position: relative; z-index: 1; }
+  .auth-mark { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; background: linear-gradient(155deg, var(--navy), var(--navy-deep)); color: var(--gold-soft); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; }
+  .auth-title { font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; margin-bottom: 6px; }
   .auth-title span { color: var(--gold-ink); }
-  .auth-rule { width: 40px; height: 2px; background: var(--gold-soft); margin: 0 auto 16px; border-radius: 2px; }
-  .auth-sub { color: var(--muted); font-size: 13.5px; margin-bottom: 26px; }
+  .auth-sub { color: var(--muted); font-size: 13.5px; margin-bottom: 22px; }
   .field { margin-bottom: 14px; text-align: left; }
   .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-  .field input, .field select, .field textarea {
-    width: 100%; font-family: inherit; font-size: 16px; color: var(--text);
-    background: var(--panel-soft); border: 1px solid var(--border2); border-radius: 10px;
-    padding: 11px 12px; outline: none; transition: border-color .15s, box-shadow .15s;
-  }
-  .field textarea { resize: vertical; min-height: 64px; }
+  .field input, .field select, .field textarea { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--panel-soft); border: 1px solid var(--border2); border-radius: 10px; padding: 11px 12px; outline: none; }
   .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-bg); }
-  .field-detail { margin-top: 8px; }
-  .auth-switch { text-align: center; margin-top: 18px; font-size: 13.5px; color: var(--muted); }
-  .auth-switch a { cursor: pointer; text-decoration: underline; color: var(--gold-ink); font-weight: 600; }
-  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; animation: msgIn .25s var(--ease); }
+  .auth-switch { margin-top: 16px; font-size: 13.5px; }
+  .auth-switch a { cursor: pointer; font-weight: 600; }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; }
   .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
   .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
-  .credential-box {
-    background: var(--gold-bg); border: 1px dashed var(--gold); border-radius: 10px;
-    padding: 12px 14px; font-size: 13.5px; margin-bottom: 14px; animation: msgIn .25s var(--ease);
-  }
-  .credential-box code {
-    font-family: monospace; background: var(--panel); border: 1px solid var(--border2);
-    border-radius: 5px; padding: 2px 6px; font-size: 13px;
-  }
-  .credential-hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
-  /* ── APP ── */
-  #app-screen { display: none; }
-  .tabs { display: flex; gap: 6px; margin: 22px 0 22px; border-bottom: 1px solid var(--border); }
-  .tab {
-    font-family: inherit; font-size: 14px; font-weight: 600; color: var(--muted); background: none;
-    border: none; padding: 10px 4px; margin-right: 22px; cursor: pointer; border-bottom: 2px solid transparent;
-    transition: color .15s, border-color .15s; display: inline-flex; align-items: center;
-  }
-  .tab svg { width: 15px; height: 15px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--navy); border-color: var(--gold); }
+  h2.title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--navy); }
+  .sub { color: var(--dim); font-size: 13px; margin: 2px 0 18px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
+  .card-title { font-family: 'Fraunces', serif; font-size: 16.5px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .row .field { flex: 1; min-width: 170px; margin-bottom: 0; }
 
-  .status-banner {
-    display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--border);
-    border-left: 4px solid var(--gold-ink); border-radius: 14px; padding: 14px 16px; margin: 18px 0 0;
-    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease);
-  }
-  .status-banner.tone-warn { border-left-color: var(--amber); }
-  .status-banner.tone-good { border-left-color: var(--green); }
-  .status-banner.tone-bad { border-left-color: var(--red); }
-  .status-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; background: var(--gold-ink); }
-  .status-banner.tone-warn .status-dot { background: var(--amber); }
-  .status-banner.tone-good .status-dot { background: var(--green); }
-  .status-banner.tone-bad .status-dot { background: var(--red); }
-  .status-label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--navy); }
-  .status-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .link-box { background: var(--gold-bg); border: 1px dashed var(--gold); border-radius: 12px; padding: 14px; margin-top: 12px; }
+  .link-box .lbl { font-size: 12px; font-weight: 600; color: var(--gold-ink); margin-bottom: 6px; }
+  .link-url { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; background: var(--panel); border: 1px solid var(--border2); border-radius: 8px; padding: 9px 10px; word-break: break-all; user-select: all; }
+  .link-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
+  .client-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 15px 16px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s, transform .15s var(--ease); animation: fadeUp .35s var(--ease) backwards; }
+  .client-card:hover { border-color: var(--gold); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .client-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .client-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; color: var(--navy); }
+  .client-note { font-size: 12.5px; color: var(--dim); }
+  .client-meta { font-size: 12px; color: var(--dim); margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .pills { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--gold-bg); color: var(--gold-ink); white-space: nowrap; }
   .pill.tone-warn { background: var(--amber-bg); color: var(--amber); }
   .pill.tone-good { background: rgba(30,142,90,.12); color: var(--green); }
   .pill.tone-bad { background: rgba(192,68,45,.12); color: var(--red); }
-
-  .view { display: none; }
-  .view.active { display: block; animation: viewIn .3s var(--ease); }
-
-  .progress-bar { height: 7px; border-radius: 4px; background: var(--border); overflow: hidden; margin: 10px 0 4px; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--navy), var(--gold)); border-radius: 4px; transition: width .3s var(--ease); }
-  .progress-label { font-size: 12px; color: var(--muted); font-weight: 500; }
-
-  .section-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 14px; overflow: hidden;
-    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease) backwards;
-  }
-  .section-hd {
-    display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; cursor: pointer;
-    transition: background .15s;
-  }
-  .section-hd:hover { background: var(--panel-soft); }
-  .section-hd-title { font-family: 'Fraunces', serif; font-size: 16.5px; font-weight: 600; color: var(--navy); }
-  .section-hd-meta { font-size: 12px; color: var(--dim); font-weight: 500; }
-  .section-chevron { color: var(--gold-ink); transition: transform .3s var(--ease); font-size: 13px; }
-  .section-card.open .section-chevron { transform: rotate(180deg); }
-  .section-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s var(--ease); }
-  .section-card.open .section-body { grid-template-rows: 1fr; }
-  .section-body-inner { overflow: hidden; padding: 0 18px; opacity: 0; transition: opacity .25s var(--ease), padding .35s var(--ease); }
-  .section-card.open .section-body-inner { padding: 4px 18px 18px; opacity: 1; }
-  .section-actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
-  .save-hint { font-size: 12px; color: var(--dim); }
-
-  .doc-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
-  .doc-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0;
-    border-top: 1px solid var(--border);
-  }
-  .doc-row:first-of-type { border-top: none; }
-  .doc-info { font-size: 13.5px; }
-  .doc-info b { display: block; font-size: 14px; }
-  .doc-info span { color: var(--dim); font-size: 12px; }
-  .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .upload-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 4px; }
-  .upload-row .field { flex: 1; min-width: 160px; margin-bottom: 0; }
-  .field input[type="file"] { padding: 8px 10px; font-size: 13px; cursor: pointer; }
-  .file-name-hint { font-size: 11.5px; color: var(--dim); margin-top: 5px; }
-
-  .log-item { padding: 12px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
-  .log-item:first-child { border-top: none; }
-  .log-item time { display: block; font-size: 11.5px; color: var(--dim); margin-top: 3px; }
-
-  .admin-user-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
-    margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s var(--ease);
-    box-shadow: var(--shadow-sm); animation: fadeUp .4s var(--ease) backwards;
-  }
-  .admin-user-card:hover { border-color: var(--gold); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-  .admin-user-top { display: flex; justify-content: space-between; align-items: center; }
-  .admin-user-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15.5px; color: var(--navy); }
-  .admin-user-email { font-size: 12.5px; color: var(--dim); }
-  .pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--gold-bg); color: var(--gold-ink); }
-
+  .pill.sent { background: rgba(30,142,90,.12); color: var(--green); }
+  .bar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: 10px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--navy), var(--gold)); }
   .empty { color: var(--dim); font-size: 13.5px; text-align: center; padding: 30px 0; }
   .back-link { display: inline-block; margin-bottom: 14px; color: var(--muted); font-size: 13.5px; cursor: pointer; font-weight: 600; }
   .back-link:hover { color: var(--gold-ink); }
-  h2.detail-title { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; margin-bottom: 2px; color: var(--navy); }
-  .detail-sub { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
-  .readonly-field { padding: 10px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
-  .readonly-field:first-child { border-top: none; }
-  .readonly-field b { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+
+  .tabs { display: flex; gap: 6px; margin: 18px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); background: none; border: none; padding: 10px 4px; margin-right: 20px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab.active { color: var(--navy); border-color: var(--gold); }
+  .view { display: none; } .view.active { display: block; }
+
+  .ans-section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+  .ans-hd { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; padding: 13px 16px; background: var(--panel-soft); border-bottom: 1px solid var(--border); color: var(--navy); }
+  .ans-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .ans-row:first-of-type { border-top: none; }
+  .ans-label { color: var(--muted); flex: 1 1 52%; }
+  .ans-value { flex: 1 1 48%; font-weight: 600; text-align: right; word-break: break-word; cursor: copy; border-radius: 6px; }
+  .ans-value:hover { background: var(--gold-bg); }
+  .ans-value.empty-v { color: var(--red); font-weight: 500; cursor: default; }
+  .ans-value.opt-v { color: var(--dim); font-weight: 400; cursor: default; }
+  .ans-list { padding: 10px 16px; border-top: 1px solid var(--border); }
+  .ans-list > .ans-label { margin-bottom: 8px; font-weight: 600; color: var(--navy); }
+  .ans-item { border: 1px solid var(--border2); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .ans-item-hd { font-size: 12px; font-weight: 700; color: var(--gold-ink); padding: 6px 12px; background: var(--gold-bg); }
+  .ans-item .ans-row { padding: 8px 12px; }
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--navy-deep); color: #fff; font-size: 13px; padding: 9px 16px; border-radius: 20px; z-index: 80; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+
+  .doc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .doc-row:first-of-type { border-top: none; }
+  .doc-row span { display: block; color: var(--dim); font-size: 12px; }
+  .log-item { padding: 11px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .log-item:first-child { border-top: none; }
+  .log-item time { display: block; font-size: 11.5px; color: var(--dim); margin-top: 3px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  @media print {
+    body::before, .topbar, .no-print, .tabs, .back-link { display: none !important; }
+    body { background: #fff; }
+    .wrap { padding: 0; max-width: none; }
+    .view { display: none !important; } #v-answers { display: block !important; }
+    .ans-section { break-inside: avoid; border-color: #bbb; }
+    .ans-value { cursor: default; }
+  }
 </style>
 </head>
 <body>
-
 <div id="boot-loader"><div class="loader-ring"></div></div>
+<div class="toast" id="toast" role="status"></div>
 
-<!-- ── AUTH ── -->
-<div id="auth-screen" style="display:none">
+<!-- ── LOGIN ── -->
+<div id="auth-screen" class="hidden">
   <div class="auth-card">
-    <div class="auth-mark">LR</div>
-    <div class="auth-title">Trámite de <span>Visas</span></div>
-    <div class="auth-rule"></div>
-    <div class="auth-sub">Ing. Luis Eduardo Rangel Llanes — ingresa con los datos de acceso que te compartió tu asesor.</div>
+    <div class="auth-mark">V</div>
+    <div class="auth-title">Visa<span>pp</span></div>
+    <div class="auth-sub">Panel del Ing. Luis Eduardo Rangel Llanes</div>
     <div id="auth-msg"></div>
-
     <form id="login-form">
-      <div class="field"><label>Correo electrónico</label><input type="email" id="login-email" required autocomplete="username"></div>
-      <div class="field"><label>Contraseña</label><input type="password" id="login-password" required autocomplete="current-password"></div>
+      <div class="field"><label for="login-email">Correo electrónico</label><input type="email" id="login-email" required autocomplete="username"></div>
+      <div class="field"><label for="login-password">Contraseña</label><input type="password" id="login-password" required autocomplete="current-password"></div>
       <button class="btn btn-primary" style="width:100%" type="submit">Ingresar</button>
     </form>
-
-    <div class="auth-switch"><span id="to-admin-setup"><a>Configurar cuenta de administrador</a></span></div>
-
-    <form id="admin-setup-form" style="display:none; margin-top:14px; text-align:left; border-top:1px solid var(--border); padding-top:16px">
-      <div class="field"><label>Nombre completo</label><input type="text" id="setup-name" required></div>
-      <div class="field"><label>Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
-      <div class="field"><label>Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
+    <div class="auth-switch"><a id="to-setup">Configurar cuenta de administrador</a></div>
+    <form id="setup-form" class="hidden" style="margin-top:14px;text-align:left;border-top:1px solid var(--border);padding-top:16px">
+      <div class="field"><label for="setup-name">Nombre completo</label><input type="text" id="setup-name" required></div>
+      <div class="field"><label for="setup-email">Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
+      <div class="field"><label for="setup-password">Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
       <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta de administrador</button>
     </form>
   </div>
 </div>
 
 <!-- ── APP ── -->
-<div id="app-screen">
+<div id="app-screen" class="hidden">
   <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">LR</div>
-      <div class="brand-text">Trámite de <span>Visas</span><small id="brand-sub">Rangel</small></div>
-    </div>
-    <div class="who">
-      <span id="who-name"></span>
-      <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
-    </div>
+    <div class="brand"><div class="brand-mark">V</div><div>Visa<span>pp</span></div></div>
+    <div class="who"><span id="who-name"></span><button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button></div>
   </div>
 
   <div class="wrap">
-    <!-- Cliente -->
-    <div id="client-area">
-      <div id="status-banner" class="status-banner" style="display:none">
-        <div class="status-dot"></div>
-        <div>
-          <div class="status-label" id="status-label"></div>
-          <div class="status-meta" id="status-meta"></div>
+    <!-- Lista -->
+    <div id="list-area">
+      <h2 class="title">Solicitudes</h2>
+      <div class="sub">Crea una solicitud, envía el enlace a tu cliente y revisa aquí lo que llene.</div>
+
+      <div class="card">
+        <div class="card-title">Nueva solicitud</div>
+        <div class="row">
+          <div class="field"><label for="new-name">Nombre del cliente</label><input type="text" id="new-name" autocomplete="off"></div>
+          <div class="field"><label for="new-note">Nota interna (opcional)</label><input type="text" id="new-note" autocomplete="off" placeholder="Ej. WhatsApp 442…"></div>
+          <button class="btn btn-primary" id="new-btn">Crear enlace</button>
         </div>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-view="view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
-        <button class="tab" data-view="view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
-        <button class="tab" data-view="view-log"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Historial</button>
+        <div id="new-msg"></div>
+        <div id="new-link"></div>
       </div>
 
-      <div id="view-form" class="view active">
-        <div class="progress-label"><span id="progress-text">0%</span> completado</div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-        <div id="sections-container" style="margin-top:16px"></div>
-      </div>
-
-      <div id="view-docs" class="view">
-        <div class="doc-card">
-          <div class="section-hd-title" style="margin-bottom:12px">Subir documento</div>
-          <div class="upload-row">
-            <div class="field">
-              <label>Categoría</label>
-              <select id="doc-category"></select>
-            </div>
-            <div class="field">
-              <label>Archivo (imagen o PDF, máx. 20MB)</label>
-              <input type="file" id="doc-file" accept="image/*,application/pdf">
-              <div class="file-name-hint" id="doc-file-hint"></div>
-            </div>
-            <button class="btn btn-primary" id="doc-upload-btn">Subir</button>
-          </div>
-          <div id="doc-upload-msg"></div>
-        </div>
-        <div class="doc-card">
-          <div class="section-hd-title" style="margin-bottom:6px">Tus documentos</div>
-          <div id="doc-list"></div>
-        </div>
-      </div>
-
-      <div id="view-log" class="view">
-        <div class="doc-card">
-          <div id="log-list"></div>
-        </div>
-        <div class="doc-card">
-          <div class="section-hd-title" style="margin-bottom:12px">Cambiar contraseña</div>
-          <div class="field"><label>Contraseña actual</label><input type="password" id="pwd-current" autocomplete="current-password"></div>
-          <div class="field"><label>Nueva contraseña (mínimo 6 caracteres)</label><input type="password" id="pwd-new" minlength="6" autocomplete="new-password"></div>
-          <div class="section-actions">
-            <button class="btn btn-primary btn-sm" id="pwd-save-btn">Actualizar contraseña</button>
-            <span class="save-hint" id="pwd-hint"></span>
-          </div>
-        </div>
-      </div>
+      <div id="apps-list"></div>
     </div>
 
-    <!-- Admin: listado de clientes -->
-    <div id="admin-list-area" style="display:none">
-      <h2 class="detail-title">Clientes</h2>
-      <div class="detail-sub">Selecciona un cliente para ver su información y documentación.</div>
+    <!-- Detalle -->
+    <div id="detail-area" class="hidden">
+      <span class="back-link" id="back">&larr; Volver a solicitudes</span>
+      <h2 class="title" id="d-name"></h2>
+      <div class="sub" id="d-sub"></div>
 
-      <div class="doc-card">
-        <div class="section-hd-title" style="margin-bottom:12px">Crear cuenta de cliente</div>
-        <div class="upload-row">
-          <div class="field"><label>Nombre completo</label><input type="text" id="new-client-name"></div>
-          <div class="field"><label>Correo electrónico</label><input type="email" id="new-client-email"></div>
-          <button class="btn btn-primary" id="new-client-btn">Crear cuenta</button>
+      <div class="card no-print">
+        <div class="card-title">Enlace para el cliente</div>
+        <div class="link-url" id="d-link"></div>
+        <div class="link-actions">
+          <button class="btn btn-sm btn-primary" id="d-copy">Copiar enlace</button>
+          <button class="btn btn-sm btn-wa" id="d-wa">Enviar por WhatsApp</button>
+          <button class="btn btn-sm" id="d-regen">Generar enlace nuevo</button>
         </div>
-        <div id="new-client-msg"></div>
+        <div class="sub" style="margin:8px 0 0">Quien tenga el enlace puede ver y editar esta solicitud. “Generar enlace nuevo” invalida el anterior.</div>
       </div>
 
-      <div id="admin-users-list"></div>
-    </div>
-
-    <!-- Admin: detalle de un cliente -->
-    <div id="admin-detail-area" style="display:none">
-      <span class="back-link" id="admin-back">&larr; Volver a clientes</span>
-      <h2 class="detail-title" id="admin-detail-name"></h2>
-      <div class="detail-sub" id="admin-detail-email"></div>
-
-      <div class="doc-card">
-        <div class="section-hd-title" style="margin-bottom:12px">Estado del trámite</div>
-        <div class="upload-row">
-          <div class="field" style="flex:1 1 220px">
-            <label>Estado</label>
-            <select id="admin-status-select"></select>
-          </div>
+      <div class="card no-print">
+        <div class="card-title">Estado del trámite</div>
+        <div class="row">
+          <div class="field" style="flex:1 1 230px"><label for="d-status">Estado</label><select id="d-status"></select></div>
+          <div class="field" style="flex:2 1 260px"><label for="d-status-note">Nota (opcional)</label><input type="text" id="d-status-note" maxlength="500"></div>
+          <button class="btn btn-primary" id="d-status-save">Actualizar</button>
         </div>
-        <div class="field">
-          <label>Nota para el cliente (opcional)</label>
-          <textarea id="admin-status-note" rows="2" placeholder="Ej. Falta comprobante de domicilio actualizado"></textarea>
-        </div>
-        <div class="section-actions">
-          <button class="btn btn-primary btn-sm" id="admin-status-save">Actualizar estado</button>
-          <span class="save-hint" id="admin-status-hint"></span>
-        </div>
+        <div class="sub" id="d-status-hint" style="margin:8px 0 0"></div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-adview="adm-view-form"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>Formulario</button>
-        <button class="tab" data-adview="adm-view-docs"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documentos</button>
-        <button class="tab" data-adview="adm-view-log"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Historial</button>
+        <button class="tab active" data-view="v-answers">Respuestas</button>
+        <button class="tab" data-view="v-docs">Documentos</button>
+        <button class="tab" data-view="v-log">Historial</button>
       </div>
-      <div id="adm-view-form" class="view active"></div>
-      <div id="adm-view-docs" class="view"><div id="adm-doc-list"></div></div>
-      <div id="adm-view-log" class="view"><div id="adm-log-list"></div></div>
+
+      <div id="v-answers" class="view active">
+        <div class="toolbar no-print">
+          <button class="btn btn-sm" id="copy-all">Copiar todo como texto</button>
+          <button class="btn btn-sm" id="print-btn">Imprimir / guardar PDF</button>
+        </div>
+        <div class="sub no-print" style="margin-top:0">Toca cualquier respuesta para copiarla. En rojo: obligatorias sin responder.</div>
+        <div id="answers"></div>
+      </div>
+      <div id="v-docs" class="view"><div class="card" id="d-docs"></div></div>
+      <div id="v-log" class="view"><div class="card" id="d-log"></div></div>
+
+      <div class="no-print" style="margin-top:24px"><button class="btn btn-danger btn-sm" id="d-delete">Eliminar esta solicitud</button></div>
     </div>
   </div>
 </div>
 
+<script src="/ds160-logic.js"></script>
 <script>
-(function(){
+(function () {
+  var DS = window.DS160;
   var API = '/api/visa';
-  var token = localStorage.getItem('visa_token') || '';
-  var me = null;
-  var schema = null;
+  var token = '';
+  try { token = localStorage.getItem('visa_token') || ''; } catch (e) {}
+  var schema = null, current = null, currentData = null;
 
-  function authHeaders(extra) {
-    var h = extra || {};
-    if (token) h['X-Auth-Token'] = token;
-    return h;
-  }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmtDate(iso) { return iso ? new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''; }
+  function fmtSize(b) { return b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }
+  function linkFor(t) { return location.origin + '/s/' + t; }
+
   function api(path, opts) {
     opts = opts || {};
-    var headers = authHeaders(opts.json !== false ? { 'Content-Type': 'application/json' } : {});
-    return fetch(API + path, {
-      method: opts.method || 'GET',
-      headers: headers,
-      body: opts.body,
-    }).then(function(res) {
-      return res.json().catch(function(){ return {}; }).then(function(data) {
-        if (!res.ok) throw new Error(data.error || 'Error de red');
-        return data;
-      });
-    });
-  }
-
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
-      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
-    });
-  }
-  function fmtDate(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    return d.toLocaleString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-  }
-  function fmtSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/1024/1024).toFixed(1) + ' MB';
-  }
-
-  // ── AUTH SCREEN ──────────────────────────────────────────────────────────
-  var authMsg = document.getElementById('auth-msg');
-  function showAuthMsg(text, isErr) {
-    authMsg.innerHTML = text ? '<div class="msg ' + (isErr?'err':'ok') + '">' + escapeHtml(text) + '</div>' : '';
-  }
-  function withLoading(btn, loadingText, fn) {
-    var original = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span>' + loadingText;
-    return fn().then(function(v){ btn.disabled = false; btn.innerHTML = original; return v; },
-      function(err){ btn.disabled = false; btn.innerHTML = original; throw err; });
-  }
-
-  document.getElementById('login-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    showAuthMsg('');
-    var btn = e.target.querySelector('button[type=submit]');
-    withLoading(btn, 'Ingresando…', function(){
-      return api('/login', { method:'POST', body: JSON.stringify({
-        email: document.getElementById('login-email').value,
-        password: document.getElementById('login-password').value,
-      })});
-    }).then(function(data){
-      token = data.token;
-      localStorage.setItem('visa_token', token);
-      boot();
-    }).catch(function(err){ showAuthMsg(err.message, true); });
-  });
-
-  document.getElementById('to-admin-setup').addEventListener('click', function(){
-    var form = document.getElementById('admin-setup-form');
-    var visible = form.style.display !== 'none';
-    form.style.display = visible ? 'none' : 'block';
-    showAuthMsg('');
-  });
-
-  document.getElementById('admin-setup-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    showAuthMsg('');
-    var btn = e.target.querySelector('button[type=submit]');
-    withLoading(btn, 'Creando…', function(){
-      return api('/register', { method:'POST', body: JSON.stringify({
-        name: document.getElementById('setup-name').value,
-        email: document.getElementById('setup-email').value,
-        password: document.getElementById('setup-password').value,
-      })});
-    }).then(function(data){
-      token = data.token;
-      localStorage.setItem('visa_token', token);
-      boot();
-    }).catch(function(err){ showAuthMsg(err.message, true); });
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', function(){
-    api('/logout', { method:'POST' }).catch(function(){}).then(function(){
-      localStorage.removeItem('visa_token');
-      token = ''; me = null;
-      document.getElementById('app-screen').style.display = 'none';
-      document.getElementById('auth-screen').style.display = 'block';
-    });
-  });
-
-  // ── TABS (cliente) ──────────────────────────────────────────────────────
-  Array.prototype.forEach.call(document.querySelectorAll('.tab[data-view]'), function(btn){
-    btn.addEventListener('click', function(){
-      Array.prototype.forEach.call(document.querySelectorAll('#client-area .tab'), function(b){ b.classList.remove('active'); });
-      Array.prototype.forEach.call(document.querySelectorAll('#client-area .view'), function(v){ v.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById(btn.dataset.view).classList.add('active');
-    });
-  });
-
-  // ── FORM RENDERING ───────────────────────────────────────────────────────
-  var formData = {};
-  function fieldKey(sectionId, fieldId) { return sectionId + '.' + fieldId; }
-
-  function renderField(sectionId, f) {
-    var key = fieldKey(sectionId, f.id);
-    var val = formData[key] || '';
-    var html = '<div class="field" data-key="' + key + '">';
-    html += '<label>' + escapeHtml(f.label) + '</label>';
-    if (f.type === 'textarea') {
-      html += '<textarea data-field="' + key + '">' + escapeHtml(val) + '</textarea>';
-    } else if (f.type === 'select') {
-      html += '<select data-field="' + key + '"><option value="">— Selecciona —</option>';
-      f.options.forEach(function(o){
-        html += '<option value="' + o.value + '"' + (o.value===val?' selected':'') + '>' + escapeHtml(o.label) + '</option>';
-      });
-      html += '</select>';
-    } else if (f.type === 'yesno') {
-      html += '<select data-field="' + key + '" data-yesno="1"><option value="">— Selecciona —</option>';
-      html += '<option value="si"' + (val==='si'?' selected':'') + '>Sí</option>';
-      html += '<option value="no"' + (val==='no'?' selected':'') + '>No</option>';
-      html += '</select>';
-      if (f.detailLabel) {
-        var dkey = key + '__detail';
-        var dval = formData[dkey] || '';
-        html += '<div class="field-detail" data-detail-for="' + key + '" style="display:' + (val==='si'?'block':'none') + '">';
-        html += '<label>' + escapeHtml(f.detailLabel) + '</label>';
-        html += '<input type="text" data-field="' + dkey + '" value="' + escapeHtml(dval) + '">';
-        html += '</div>';
-      }
-    } else {
-      html += '<input type="' + f.type + '" data-field="' + key + '" value="' + escapeHtml(val) + '">';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function sectionCompletion(section) {
-    var filled = 0;
-    section.fields.forEach(function(f){
-      var v = formData[fieldKey(section.id, f.id)];
-      if (v !== undefined && v !== null && String(v).trim() !== '') filled++;
-    });
-    return filled + '/' + section.fields.length;
-  }
-
-  function renderSections() {
-    var container = document.getElementById('sections-container');
-    container.innerHTML = schema.sections.map(function(s, i){
-      var fieldsHtml = s.fields.map(function(f){ return renderField(s.id, f); }).join('');
-      return (
-        '<div class="section-card' + (i===0?' open':'') + '" data-section="' + s.id + '" style="animation-delay:' + (i*45) + 'ms">' +
-          '<div class="section-hd">' +
-            '<div><div class="section-hd-title">' + escapeHtml(s.title) + '</div>' +
-            '<div class="section-hd-meta" data-count-for="' + s.id + '">' + sectionCompletion(s) + ' campos</div></div>' +
-            '<div class="section-chevron">&#9662;</div>' +
-          '</div>' +
-          '<div class="section-body"><div class="section-body-inner">' +
-            fieldsHtml +
-            '<div class="section-actions">' +
-              '<button class="btn btn-primary btn-sm" data-save-section="' + s.id + '">Guardar sección</button>' +
-              '<span class="save-hint" data-hint-for="' + s.id + '"></span>' +
-            '</div>' +
-          '</div></div>' +
-        '</div>'
-      );
-    }).join('');
-
-    Array.prototype.forEach.call(container.querySelectorAll('.section-hd'), function(hd){
-      hd.addEventListener('click', function(){ hd.parentElement.classList.toggle('open'); });
-    });
-    Array.prototype.forEach.call(container.querySelectorAll('[data-field]'), function(el){
-      el.addEventListener('input', function(){
-        formData[el.dataset.field] = el.value;
-        if (el.dataset.yesno) {
-          var wrap = container.querySelector('[data-detail-for="' + el.dataset.field + '"]');
-          if (wrap) wrap.style.display = el.value === 'si' ? 'block' : 'none';
-        }
-      });
-    });
-    Array.prototype.forEach.call(container.querySelectorAll('[data-save-section]'), function(btn){
-      btn.addEventListener('click', function(){ saveSection(btn.dataset.saveSection); });
-    });
-  }
-
-  function saveSection(sectionId) {
-    var section = schema.sections.find(function(s){ return s.id === sectionId; });
-    var payload = {};
-    section.fields.forEach(function(f){
-      var key = fieldKey(sectionId, f.id);
-      payload[key] = formData[key] || '';
-      var dkey = key + '__detail';
-      if (formData[dkey] !== undefined) payload[dkey] = formData[dkey];
-    });
-    var hint = document.querySelector('[data-hint-for="' + sectionId + '"]');
-    hint.textContent = 'Guardando…';
-    api('/form', { method:'POST', body: JSON.stringify({ data: payload, sectionTitle: section.title }) })
-      .then(function(data){
-        hint.textContent = 'Guardado ' + fmtDate(data.updatedAt);
-        document.querySelector('[data-count-for="' + sectionId + '"]').textContent = sectionCompletion(section) + ' campos';
-        updateProgress(data.completion);
-        refreshLog();
-      })
-      .catch(function(err){ hint.textContent = 'Error: ' + err.message; });
-  }
-
-  function updateProgress(c) {
-    if (!c) return;
-    document.getElementById('progress-text').textContent = c.pct + '% (' + c.filled + '/' + c.total + ')';
-    document.getElementById('progress-fill').style.width = c.pct + '%';
-  }
-
-  function refreshLog() {
-    if (me && me.isAdmin) return;
-    api('/log').then(function(data){ renderLog(document.getElementById('log-list'), data.log); }).catch(function(){});
-  }
-
-  // ── ESTADO DEL TRÁMITE ──────────────────────────────────────────────────────
-  function statusOption(value) {
-    return (schema.statusOptions || []).find(function(s){ return s.value === value; }) || { label: value, tone: 'neutral' };
-  }
-  function populateStatusSelect(sel) {
-    sel.innerHTML = schema.statusOptions.map(function(s){ return '<option value="' + s.value + '">' + escapeHtml(s.label) + '</option>'; }).join('');
-  }
-  function renderStatusBanner(status) {
-    var banner = document.getElementById('status-banner');
-    if (!status) { banner.style.display = 'none'; return; }
-    var opt = statusOption(status.status);
-    banner.className = 'status-banner tone-' + opt.tone;
-    banner.style.display = 'flex';
-    document.getElementById('status-label').textContent = opt.label;
-    var parts = [];
-    if (status.note) parts.push(status.note);
-    if (status.updatedAt) parts.push('Actualizado ' + fmtDate(status.updatedAt));
-    document.getElementById('status-meta').textContent = parts.join(' · ');
-  }
-  function statusPill(status) {
-    var opt = statusOption(status.status);
-    return '<span class="pill tone-' + opt.tone + '">' + escapeHtml(opt.label) + '</span>';
-  }
-
-  // ── DOCUMENTOS ───────────────────────────────────────────────────────────
-  function populateCategorySelect(sel, categories) {
-    sel.innerHTML = categories.map(function(c){ return '<option value="' + c.value + '">' + escapeHtml(c.label) + '</option>'; }).join('');
-  }
-
-  function loadDocuments() {
-    api('/documents').then(function(data){
-      renderDocList(document.getElementById('doc-list'), data.documents, false);
-    });
-  }
-  function categoryLabel(value) {
-    var c = schema.documentCategories.find(function(x){ return x.value === value; });
-    return c ? c.label : value;
-  }
-  function renderDocList(container, list, readOnly) {
-    if (!list || !list.length) { container.innerHTML = '<div class="empty">Sin documentos aún</div>'; return; }
-    container.innerHTML = list.map(function(d){
-      return (
-        '<div class="doc-row">' +
-          '<div class="doc-info"><b>' + escapeHtml(d.originalName) + '</b>' +
-          '<span>' + escapeHtml(categoryLabel(d.category)) + ' · ' + fmtSize(d.size) + ' · ' + fmtDate(d.uploadedAt) + '</span></div>' +
-          '<div class="doc-actions">' +
-            '<button class="btn btn-sm" data-dl="' + d.id + '">Descargar</button>' +
-            (readOnly ? '' : '<button class="btn btn-sm btn-danger" data-del="' + d.id + '">Eliminar</button>') +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
-    Array.prototype.forEach.call(container.querySelectorAll('[data-dl]'), function(btn){
-      btn.addEventListener('click', function(){
-        var url = readOnly
-          ? API + '/admin/users/' + currentAdminUserId + '/documents/' + btn.dataset.dl + '/download'
-          : API + '/documents/' + btn.dataset.dl + '/download';
-        downloadWithAuth(url);
-      });
-    });
-    if (!readOnly) {
-      Array.prototype.forEach.call(container.querySelectorAll('[data-del]'), function(btn){
-        btn.addEventListener('click', function(){
-          if (!confirm('¿Eliminar este documento?')) return;
-          api('/documents/' + btn.dataset.del, { method:'DELETE' }).then(function(){ loadDocuments(); refreshLog(); });
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['X-Auth-Token'] = token;
+    return fetch(API + path, { method: opts.method || 'GET', headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (d) {
+          if (!res.ok) { var e = new Error(d.error || 'Error de red'); e.status = res.status; throw e; }
+          return d;
         });
       });
+  }
+  var toastTimer;
+  function toast(text) {
+    var t = $('toast'); t.textContent = text; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  function copy(text, okMsg) {
+    var done = function () { toast(okMsg || 'Copiado'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+    } else fallback();
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('No se pudo copiar'); }
+      ta.remove();
     }
   }
-  function downloadWithAuth(url) {
-    fetch(url, { headers: authHeaders() }).then(function(res){
-      if (!res.ok) throw new Error('No se pudo descargar');
-      return res.blob().then(function(blob){
-        var cd = res.headers.get('Content-Disposition') || '';
-        var m = /filename="?([^"]+)"?/.exec(cd);
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = m ? m[1] : 'documento';
-        document.body.appendChild(a); a.click(); a.remove();
-      });
-    }).catch(function(err){ alert(err.message); });
+  function busy(btn, text, fn) {
+    var orig = btn.textContent; btn.disabled = true; btn.textContent = text;
+    return fn().then(function (v) { btn.disabled = false; btn.textContent = orig; return v; },
+      function (e) { btn.disabled = false; btn.textContent = orig; throw e; });
+  }
+  function waLink(name, url) {
+    var text = 'Hola ' + name + ', para tu trámite de visa necesito que llenes tu información en este enlace (se guarda sola y puedes continuar después): ' + url;
+    return 'https://wa.me/?text=' + encodeURIComponent(text);
   }
 
-  document.getElementById('doc-file').addEventListener('change', function(){
-    document.getElementById('doc-file-hint').textContent = this.files[0] ? this.files[0].name : '';
+  // ── Auth ────────────────────────────────────────────────────────────────
+  function authMsg(t, err) { $('auth-msg').innerHTML = t ? '<div class="msg ' + (err ? 'err' : 'ok') + '">' + esc(t) + '</div>' : ''; }
+  function setToken(t) { token = t; try { localStorage.setItem('visa_token', t); } catch (e) {} }
+  function clearToken() { token = ''; try { localStorage.removeItem('visa_token'); } catch (e) {} }
+
+  $('login-form').addEventListener('submit', function (e) {
+    e.preventDefault(); authMsg('');
+    busy(e.target.querySelector('button'), 'Ingresando…', function () {
+      return api('/login', { method: 'POST', body: { email: $('login-email').value, password: $('login-password').value } });
+    }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
+  });
+  $('to-setup').addEventListener('click', function () { $('setup-form').classList.toggle('hidden'); authMsg(''); });
+  $('setup-form').addEventListener('submit', function (e) {
+    e.preventDefault(); authMsg('');
+    busy(e.target.querySelector('button'), 'Creando…', function () {
+      return api('/register', { method: 'POST', body: { name: $('setup-name').value, email: $('setup-email').value, password: $('setup-password').value } });
+    }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
+  });
+  $('logout-btn').addEventListener('click', function () {
+    api('/logout', { method: 'POST' }).catch(function () {}).then(function () {
+      clearToken(); $('app-screen').classList.add('hidden'); $('auth-screen').classList.remove('hidden');
+    });
   });
 
-  document.getElementById('doc-upload-btn').addEventListener('click', function(){
-    var fileInput = document.getElementById('doc-file');
-    var msg = document.getElementById('doc-upload-msg');
-    if (!fileInput.files[0]) { msg.innerHTML = '<div class="msg err">Selecciona un archivo</div>'; return; }
-    var fd = new FormData();
-    fd.append('file', fileInput.files[0]);
-    fd.append('category', document.getElementById('doc-category').value);
-    msg.innerHTML = '';
-    fetch(API + '/documents', { method:'POST', headers: authHeaders(), body: fd })
-      .then(function(res){ return res.json().then(function(d){ if(!res.ok) throw new Error(d.error||'Error'); return d; }); })
-      .then(function(){
-        msg.innerHTML = '<div class="msg ok">Documento subido</div>';
-        fileInput.value = '';
-        document.getElementById('doc-file-hint').textContent = '';
-        loadDocuments();
-        refreshLog();
-      })
-      .catch(function(err){ msg.innerHTML = '<div class="msg err">' + escapeHtml(err.message) + '</div>'; });
+  // ── Lista ───────────────────────────────────────────────────────────────
+  function statusOpt(v) { return (schema.statusOptions.filter(function (s) { return s.value === v; })[0]) || { label: v, tone: 'neutral' }; }
+  function linkBoxHtml(app) {
+    var url = linkFor(app.token);
+    return '<div class="link-box"><div class="lbl">Enlace para ' + esc(app.clientName) + '</div><div class="link-url">' + esc(url) + '</div>' +
+      '<div class="link-actions"><button class="btn btn-sm btn-primary" data-copy="' + esc(url) + '">Copiar enlace</button>' +
+      '<a class="btn btn-sm btn-wa" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="' + esc(waLink(app.clientName, url)) + '">Enviar por WhatsApp</a></div></div>';
+  }
+
+  $('new-btn').addEventListener('click', function () {
+    var name = $('new-name').value.trim();
+    if (!name) { $('new-msg').innerHTML = '<div class="msg err">Escribe el nombre del cliente</div>'; return; }
+    $('new-msg').innerHTML = '';
+    busy($('new-btn'), 'Creando…', function () {
+      return api('/admin/applications', { method: 'POST', body: { name: name, note: $('new-note').value } });
+    }).then(function (d) {
+      $('new-link').innerHTML = linkBoxHtml(d.application);
+      $('new-name').value = ''; $('new-note').value = '';
+      loadList();
+    }).catch(function (err) { $('new-msg').innerHTML = '<div class="msg err">' + esc(err.message) + '</div>'; });
   });
 
-  document.getElementById('pwd-save-btn').addEventListener('click', function(){
-    var cur = document.getElementById('pwd-current');
-    var neu = document.getElementById('pwd-new');
-    var hint = document.getElementById('pwd-hint');
-    if (neu.value.length < 6) { hint.textContent = 'La nueva contraseña debe tener al menos 6 caracteres'; return; }
-    hint.textContent = 'Guardando…';
-    api('/password', { method:'PUT', body: JSON.stringify({ currentPassword: cur.value, newPassword: neu.value }) })
-      .then(function(){
-        hint.textContent = 'Contraseña actualizada';
-        cur.value = ''; neu.value = '';
-        refreshLog();
-      })
-      .catch(function(err){ hint.textContent = 'Error: ' + err.message; });
+  function loadList() {
+    return api('/admin/applications').then(function (d) {
+      var box = $('apps-list');
+      if (!d.applications.length) { box.innerHTML = '<div class="empty">Aún no hay solicitudes. Crea la primera arriba.</div>'; return; }
+      box.innerHTML = d.applications.map(function (a, i) {
+        var st = statusOpt(a.status.status);
+        return '<div class="client-card" data-open="' + a.id + '" style="animation-delay:' + (i * 35) + 'ms">' +
+          '<div class="client-top"><div><div class="client-name">' + esc(a.clientName) + '</div>' + (a.note ? '<div class="client-note">' + esc(a.note) + '</div>' : '') + '</div>' +
+          '<div class="pills">' + (a.submittedAt ? '<span class="pill sent">Enviado</span>' : '') +
+          '<span class="pill tone-' + st.tone + '">' + esc(st.label) + '</span><span class="pill">' + a.completion.pct + '%</span></div></div>' +
+          '<div class="bar"><i style="width:' + a.completion.pct + '%"></i></div>' +
+          '<div class="client-meta"><span>' + a.documentCount + ' doc(s)</span><span>·</span><span>' +
+          (a.updatedAt ? 'Última edición ' + fmtDate(a.updatedAt) : a.lastOpenedAt ? 'Abrió el enlace ' + fmtDate(a.lastOpenedAt) : 'Aún no abre el enlace') + '</span>' +
+          '<button class="btn btn-sm" style="margin-left:auto" data-copy="' + esc(linkFor(a.token)) + '">Copiar enlace</button></div></div>';
+      }).join('');
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest ? e.target.closest('[data-copy]') : null;
+    if (c) { e.stopPropagation(); copy(c.dataset.copy, 'Enlace copiado'); return; }
+    var o = e.target.closest ? e.target.closest('[data-open]') : null;
+    if (o) openDetail(o.dataset.open);
   });
 
-  // ── HISTORIAL ────────────────────────────────────────────────────────────
-  function renderLog(container, log) {
-    if (!log || !log.length) { container.innerHTML = '<div class="empty">Sin actividad registrada</div>'; return; }
-    var labels = {
-      account_created: 'Cuenta creada', form_saved: 'Formulario guardado',
-      document_uploaded: 'Documento subido', document_deleted: 'Documento eliminado',
-      status_changed: 'Estado del trámite actualizado', password_changed: 'Contraseña actualizada',
-    };
-    container.innerHTML = log.map(function(l){
-      return '<div class="log-item"><b>' + (labels[l.action] || l.action) + '</b>' +
-        (l.detail ? ' — ' + escapeHtml(l.detail) : '') +
-        '<time>' + fmtDate(l.ts) + '</time></div>';
+  // ── Detalle ─────────────────────────────────────────────────────────────
+  function answersHtml(data) {
+    return DS.present(schema.sections, data).map(function (s) {
+      function rows(list) {
+        return list.map(function (r) {
+          if (r.items) {
+            return '<div class="ans-list"><div class="ans-label">' + esc(r.label) + '</div>' +
+              (r.items.length ? r.items.map(function (it, i) {
+                return '<div class="ans-item"><div class="ans-item-hd">' + esc(r.itemLabel) + ' ' + (i + 1) + '</div>' + rows(it) + '</div>';
+              }).join('') : '<div class="ans-value empty-v" style="text-align:left">— sin respuesta —</div>') + '</div>';
+          }
+          var cls = r.empty ? (r.optional ? 'opt-v' : 'empty-v') : '';
+          return '<div class="ans-row"><div class="ans-label">' + esc(r.label) + '</div><div class="ans-value ' + cls + '"' +
+            (r.empty ? '' : ' data-val="' + esc(r.value) + '" title="Tocar para copiar"') + '>' + (r.empty ? (r.optional ? '—' : 'Sin responder') : esc(r.value)) + '</div></div>';
+        }).join('');
+      }
+      return '<div class="ans-section"><div class="ans-hd">' + esc(s.title) + '</div>' + rows(s.rows) + '</div>';
     }).join('');
   }
-
-  // ── ADMIN ────────────────────────────────────────────────────────────────
-  var currentAdminUserId = null;
-
-  document.getElementById('new-client-btn').addEventListener('click', function(){
-    var nameEl = document.getElementById('new-client-name');
-    var emailEl = document.getElementById('new-client-email');
-    var msg = document.getElementById('new-client-msg');
-    var btn = document.getElementById('new-client-btn');
-    var name = nameEl.value.trim();
-    var email = emailEl.value.trim();
-    if (!name || !email) { msg.innerHTML = '<div class="msg err">Nombre y correo son obligatorios</div>'; return; }
-    msg.innerHTML = '';
-    withLoading(btn, 'Creando…', function(){
-      return api('/admin/users', { method:'POST', body: JSON.stringify({ name: name, email: email }) });
-    }).then(function(data){
-      msg.innerHTML =
-        '<div class="msg ok">Cuenta creada para ' + escapeHtml(data.user.name) + '</div>' +
-        '<div class="credential-box">' +
-          '<div><b>Correo:</b> ' + escapeHtml(data.user.email) + '</div>' +
-          '<div><b>Contraseña temporal:</b> <code>' + escapeHtml(data.tempPassword) + '</code></div>' +
-          '<div class="credential-hint">Comparte estos datos con el cliente. La contraseña no volverá a mostrarse aquí; el cliente puede cambiarla desde su cuenta una vez que ingrese.</div>' +
-        '</div>';
-      nameEl.value = ''; emailEl.value = '';
-      loadAdminList();
-    }).catch(function(err){ msg.innerHTML = '<div class="msg err">' + escapeHtml(err.message) + '</div>'; });
+  $('answers').addEventListener('click', function (e) {
+    var v = e.target.closest ? e.target.closest('.ans-value[data-val]') : null;
+    if (v) copy(v.dataset.val, 'Copiado');
   });
 
-  function loadAdminList() {
-    api('/admin/users').then(function(data){
-      var container = document.getElementById('admin-users-list');
-      if (!data.users.length) { container.innerHTML = '<div class="empty">Aún no hay clientes registrados</div>'; return; }
-      container.innerHTML = data.users.map(function(u, i){
-        return (
-          '<div class="admin-user-card" data-user="' + u.id + '" style="animation-delay:' + (i*40) + 'ms">' +
-            '<div class="admin-user-top">' +
-              '<div><div class="admin-user-name">' + escapeHtml(u.name) + '</div>' +
-              '<div class="admin-user-email">' + escapeHtml(u.email) + '</div></div>' +
-              '<div style="display:flex;gap:6px;flex-shrink:0">' + statusPill(u.status) + '<span class="pill">' + u.completion.pct + '%</span></div>' +
-            '</div>' +
-            '<div class="section-hd-meta" style="margin-top:8px">' + u.documentCount + ' documento(s) · ' +
-            (u.formUpdatedAt ? 'actualizado ' + fmtDate(u.formUpdatedAt) : 'sin actividad') + '</div>' +
-          '</div>'
-        );
-      }).join('');
-      Array.prototype.forEach.call(container.querySelectorAll('[data-user]'), function(card){
-        card.addEventListener('click', function(){ openAdminDetail(card.dataset.user); });
-      });
-    });
+  function openDetail(id) {
+    api('/admin/applications/' + id).then(function (d) {
+      current = d.application; currentData = d.data;
+      $('list-area').classList.add('hidden'); $('detail-area').classList.remove('hidden');
+      window.scrollTo(0, 0);
+      $('d-name').textContent = current.clientName;
+      $('d-sub').textContent = (current.note ? current.note + ' · ' : '') + current.completion.pct + '% completado' +
+        (current.submittedAt ? ' · enviado ' + fmtDate(current.submittedAt) : ' · aún no lo envía');
+      $('d-link').textContent = linkFor(current.token);
+      $('d-status').value = current.status.status;
+      $('d-status-note').value = current.status.note || '';
+      $('d-status-hint').textContent = current.status.updatedAt ? 'Última actualización: ' + fmtDate(current.status.updatedAt) : '';
+      $('answers').innerHTML = answersHtml(d.data);
+      $('d-docs').innerHTML = d.documents.length ? d.documents.map(function (x) {
+        var cat = schema.documentCategories.filter(function (c) { return c.value === x.category; })[0];
+        return '<div class="doc-row"><div>' + esc(x.originalName) + '<span>' + esc(cat ? cat.label : x.category) + ' · ' + fmtSize(x.size) + ' · ' + fmtDate(x.uploadedAt) + '</span></div>' +
+          '<button class="btn btn-sm" data-dl="' + x.id + '">Descargar</button></div>';
+      }).join('') : '<div class="empty">Sin documentos</div>';
+      var labels = { link_created: 'Solicitud creada', link_regenerated: 'Enlace regenerado', submitted: 'Formulario enviado', document_uploaded: 'Documento subido', document_deleted: 'Documento eliminado', status_changed: 'Estado actualizado' };
+      $('d-log').innerHTML = d.log.length ? d.log.map(function (l) {
+        return '<div class="log-item"><b>' + esc(labels[l.action] || l.action) + '</b>' + (l.detail ? ' — ' + esc(l.detail) : '') + '<time>' + fmtDate(l.ts) + '</time></div>';
+      }).join('') : '<div class="empty">Sin actividad</div>';
+    }).catch(function (err) { alert(err.message); });
   }
 
-  function openAdminDetail(userId) {
-    currentAdminUserId = userId;
-    api('/admin/users/' + userId).then(function(data){
-      document.getElementById('admin-list-area').style.display = 'none';
-      document.getElementById('admin-detail-area').style.display = 'block';
-      document.getElementById('admin-detail-name').textContent = data.user.name;
-      document.getElementById('admin-detail-email').textContent = data.user.email + ' · ' + data.completion.pct + '% completado';
-
-      document.getElementById('admin-status-select').value = data.status.status;
-      document.getElementById('admin-status-note').value = data.status.note || '';
-      document.getElementById('admin-status-hint').textContent = data.status.updatedAt
-        ? 'Última actualización: ' + fmtDate(data.status.updatedAt) : 'Sin actualizaciones aún';
-
-      var formContainer = document.getElementById('adm-view-form');
-      formContainer.innerHTML = schema.sections.map(function(s){
-        var rows = s.fields.map(function(f){
-          var v = data.data[fieldKey(s.id, f.id)];
-          var label = f.label;
-          if (f.type === 'yesno' && v) v = v === 'si' ? 'Sí' : 'No';
-          var dval = data.data[fieldKey(s.id, f.id) + '__detail'];
-          return '<div class="readonly-field"><b>' + escapeHtml(label) + '</b>' + (v ? escapeHtml(v) : '<span style="color:var(--dim)">— sin responder —</span>') +
-            (dval ? '<div style="color:var(--muted);margin-top:4px">' + escapeHtml(dval) + '</div>' : '') + '</div>';
-        }).join('');
-        return '<div class="doc-card"><div class="section-hd-title" style="margin-bottom:6px">' + escapeHtml(s.title) + '</div>' + rows + '</div>';
-      }).join('');
-
-      renderDocList(document.getElementById('adm-doc-list'), data.documents, true);
-      renderLog(document.getElementById('adm-log-list'), data.log);
-    });
-  }
-  document.getElementById('admin-status-save').addEventListener('click', function(){
-    var hint = document.getElementById('admin-status-hint');
-    hint.textContent = 'Guardando…';
-    api('/admin/users/' + currentAdminUserId + '/status', { method:'PUT', body: JSON.stringify({
-      status: document.getElementById('admin-status-select').value,
-      note: document.getElementById('admin-status-note').value,
-    })}).then(function(){
-      openAdminDetail(currentAdminUserId);
-      loadAdminList();
-    }).catch(function(err){ hint.textContent = 'Error: ' + err.message; });
-  });
-
-  document.getElementById('admin-back').addEventListener('click', function(){
-    document.getElementById('admin-detail-area').style.display = 'none';
-    document.getElementById('admin-list-area').style.display = 'block';
-    loadAdminList();
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('.tab[data-adview]'), function(btn){
-    btn.addEventListener('click', function(){
-      Array.prototype.forEach.call(document.querySelectorAll('#admin-detail-area .tab'), function(b){ b.classList.remove('active'); });
-      Array.prototype.forEach.call(document.querySelectorAll('#admin-detail-area .view'), function(v){ v.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById(btn.dataset.adview).classList.add('active');
+  $('back').addEventListener('click', function () { $('detail-area').classList.add('hidden'); $('list-area').classList.remove('hidden'); loadList(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (x) { x.classList.remove('active'); });
+      Array.prototype.forEach.call(document.querySelectorAll('.view'), function (x) { x.classList.remove('active'); });
+      b.classList.add('active'); $(b.dataset.view).classList.add('active');
     });
   });
+  $('d-copy').addEventListener('click', function () { copy(linkFor(current.token), 'Enlace copiado'); });
+  $('d-wa').addEventListener('click', function () { window.open(waLink(current.clientName, linkFor(current.token)), '_blank', 'noopener'); });
+  $('d-regen').addEventListener('click', function () {
+    if (!confirm('El enlace actual dejará de funcionar. ¿Generar uno nuevo?')) return;
+    api('/admin/applications/' + current.id + '/regenerate-link', { method: 'POST' }).then(function () { openDetail(current.id); toast('Enlace nuevo generado'); })
+      .catch(function (err) { alert(err.message); });
+  });
+  $('d-status-save').addEventListener('click', function () {
+    busy($('d-status-save'), 'Guardando…', function () {
+      return api('/admin/applications/' + current.id + '/status', { method: 'PUT', body: { status: $('d-status').value, note: $('d-status-note').value } });
+    }).then(function () { openDetail(current.id); toast('Estado actualizado'); }).catch(function (err) { alert(err.message); });
+  });
+  $('copy-all').addEventListener('click', function () {
+    copy('SOLICITUD DS-160 — ' + current.clientName + '\n' + DS.toText(schema.sections, currentData), 'Todo copiado');
+  });
+  $('print-btn').addEventListener('click', function () { window.print(); });
+  $('d-delete').addEventListener('click', function () {
+    if (!confirm('¿Eliminar la solicitud de ' + current.clientName + ' con todas sus respuestas y documentos? No se puede deshacer.')) return;
+    api('/admin/applications/' + current.id, { method: 'DELETE' }).then(function () { $('back').click(); }).catch(function (err) { alert(err.message); });
+  });
+  $('d-docs').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-dl]') : null;
+    if (!b) return;
+    fetch(API + '/admin/applications/' + current.id + '/documents/' + b.dataset.dl + '/download', { headers: { 'X-Auth-Token': token } })
+      .then(function (res) {
+        if (!res.ok) throw new Error('No se pudo descargar');
+        return res.blob().then(function (blob) {
+          var cd = res.headers.get('Content-Disposition') || '';
+          var m = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/.exec(cd);
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = m ? decodeURIComponent(m[1] || m[2]) : 'documento';
+          document.body.appendChild(a); a.click(); a.remove();
+        });
+      }).catch(function (err) { alert(err.message); });
+  });
 
-  // ── BOOT ─────────────────────────────────────────────────────────────────
-  function hideLoader() { document.getElementById('boot-loader').classList.add('hide'); }
+  // ── Arranque ────────────────────────────────────────────────────────────
+  function hideLoader() { $('boot-loader').classList.add('hide'); }
+  function showAuth() { hideLoader(); $('app-screen').classList.add('hidden'); $('auth-screen').classList.remove('hidden'); }
 
   function boot() {
-    if (!token) {
+    if (!token) { showAuth(); return; }
+    Promise.all([schema ? Promise.resolve(schema) : api('/schema'), api('/me')]).then(function (r) {
+      schema = r[0];
+      $('who-name').textContent = r[1].user.name;
+      $('d-status').innerHTML = schema.statusOptions.map(function (s) { return '<option value="' + s.value + '">' + esc(s.label) + '</option>'; }).join('');
+      $('auth-screen').classList.add('hidden'); $('app-screen').classList.remove('hidden');
+      $('detail-area').classList.add('hidden'); $('list-area').classList.remove('hidden');
       hideLoader();
-      document.getElementById('auth-screen').style.display = 'block';
-      return;
-    }
-    Promise.all([
-      schema ? Promise.resolve(schema) : api('/schema'),
-      api('/me'),
-    ]).then(function(results){
-      schema = results[0];
-      me = results[1].user;
-      hideLoader();
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'block';
-      document.getElementById('who-name').textContent = me.name + (me.isAdmin ? ' · Admin' : '');
-      populateCategorySelect(document.getElementById('doc-category'), schema.documentCategories);
-      populateStatusSelect(document.getElementById('admin-status-select'));
-
-      if (me.isAdmin) {
-        document.getElementById('client-area').style.display = 'none';
-        document.getElementById('admin-list-area').style.display = 'block';
-        document.getElementById('admin-detail-area').style.display = 'none';
-        loadAdminList();
-      } else {
-        document.getElementById('client-area').style.display = 'block';
-        document.getElementById('admin-list-area').style.display = 'none';
-        renderStatusBanner(results[1].status);
-        api('/form').then(function(data){
-          formData = data.data || {};
-          renderSections();
-          updateProgress(data.completion);
-          renderLog(document.getElementById('log-list'), data.log);
-        });
-        loadDocuments();
-      }
-    }).catch(function(){
-      localStorage.removeItem('visa_token');
-      token = '';
-      hideLoader();
-      document.getElementById('app-screen').style.display = 'none';
-      document.getElementById('auth-screen').style.display = 'block';
+      return loadList();
+    }).catch(function (err) {
+      if (err && err.status === 401) clearToken();
+      showAuth();
     });
   }
-
   boot();
 })();
 </script>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#FBF7EE">
+<title>Visapp — Tu solicitud de visa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #FBF7EE; --panel: #FFFFFF; --soft: #F6F0E2;
+    --border: rgba(22,33,61,.09); --border2: rgba(22,33,61,.18);
+    --text: #16213D; --muted: #5C6B85; --dim: #7C879C;
+    --navy: #16213D; --navy-deep: #0E1729;
+    --gold: #B8841F; --gold-ink: #7A5A16; --gold-bg: rgba(184,132,31,.12); --gold-soft: #E3BB66;
+    --green: #1E8E5A; --green-bg: rgba(30,142,90,.1); --red: #C0442D;
+    --ease: cubic-bezier(.32,.72,0,1);
+    --shadow: 0 18px 40px -22px rgba(22,33,61,.35), 0 2px 8px rgba(22,33,61,.05);
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 80% 45% at 85% -10%, rgba(227,187,102,.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at -10% 105%, rgba(22,33,61,.07) 0%, transparent 60%); }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(184,132,31,.55); outline-offset: 2px; }
+  .hidden { display: none !important; }
+
+  /* ── Encabezado ── */
+  .topbar { position: sticky; top: 0; z-index: 30; background: rgba(251,247,238,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+    padding: calc(10px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left)); }
+  .topbar-in { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .ring { --p: 0; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+    background: conic-gradient(var(--gold) calc(var(--p) * 1%), rgba(22,33,61,.1) 0); transition: background .4s; }
+  .ring b { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-size: 11.5px; font-weight: 700; color: var(--navy); }
+  .hdr-text { flex: 1; min-width: 0; }
+  .hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdr-sub { font-size: 12.5px; color: var(--muted); }
+  .save-state { font-size: 11.5px; color: var(--green); white-space: nowrap; }
+  .save-state.err { color: var(--red); }
+  .menu-btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--navy); background: var(--panel); border: 1px solid var(--border2); border-radius: 999px; padding: 8px 14px; cursor: pointer; flex-shrink: 0; }
+
+  .wrap { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 18px 14px calc(120px + env(safe-area-inset-bottom)); }
+  .cheer { display: flex; gap: 10px; align-items: center; background: var(--gold-bg); border-radius: 14px; padding: 11px 14px; font-size: 13.5px; font-weight: 500; color: var(--navy); margin-bottom: 14px; animation: fadeUp .4s var(--ease); }
+  .cheer .em { font-size: 20px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 24px 20px 10px; box-shadow: var(--shadow); }
+  .card.slide { animation: slideIn .35s var(--ease); }
+  .sec-badge { width: 52px; height: 52px; border-radius: 16px; background: var(--soft); display: grid; place-items: center; font-size: 27px; margin-bottom: 12px; }
+  .card h1 { font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; letter-spacing: -.3px; line-height: 1.2; }
+  .page-dots { display: flex; gap: 5px; margin: 10px 0 12px; align-items: center; }
+  .page-dots i { height: 6px; width: 18px; border-radius: 3px; background: rgba(22,33,61,.12); }
+  .page-dots i.on { background: var(--gold); } .page-dots i.cur { width: 30px; }
+  .page-dots span { font-size: 12px; color: var(--dim); margin-left: 6px; }
+  .tip { color: var(--muted); font-size: 14.5px; margin-bottom: 20px; }
+
+  .field { margin-bottom: 22px; }
+  .field > label, .field .lbl { display: block; font-size: 15px; color: var(--navy); margin-bottom: 8px; font-weight: 600; line-height: 1.35; }
+  .field .help { font-size: 12.5px; color: var(--dim); margin-top: 6px; }
+  .field input[type=text], .field input[type=tel], .field input[type=email], .field input[type=number], .field input[type=date], .field select, .field textarea {
+    width: 100%; font-family: inherit; font-size: 16px; color: var(--text); background: #FDFBF6;
+    border: 1.5px solid var(--border2); border-radius: 14px; padding: 13px 14px; outline: none; transition: border-color .15s, box-shadow .15s, background .15s; min-height: 52px; }
+  .field textarea { resize: vertical; min-height: 96px; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-bg); background: #fff; }
+  .field input:disabled { background: #EFEADD; color: var(--dim); }
+  .na-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 14px; color: var(--muted); cursor: pointer; min-height: 32px; }
+  .na-row input { width: 20px; height: 20px; accent-color: var(--navy); }
+  .opt { font-weight: 400; color: var(--dim); font-size: 12.5px; margin-left: 6px; }
+
+  .yn { display: flex; gap: 10px; }
+  .yn button { flex: 1; font: inherit; font-size: 16px; font-weight: 600; min-height: 54px; border-radius: 14px; border: 1.5px solid var(--border2); background: #FDFBF6; color: var(--muted); cursor: pointer; transition: all .15s var(--ease); }
+  .yn button:active { transform: scale(.97); }
+  .yn button.on { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 6px 14px -6px rgba(22,33,61,.5); }
+  .yn button.on::before { content: '✓ '; }
+
+  .list { margin: 4px 0 22px; }
+  .list-title { font-size: 12px; font-weight: 700; color: var(--gold-ink); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .list-item { border: 1.5px dashed var(--border2); background: var(--soft); border-radius: 18px; padding: 16px 14px 0; margin-bottom: 12px; }
+  .list-item-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; }
+  .list-item .field input, .list-item .field select, .list-item .field textarea { background: #fff; }
+
+  .btn { font: inherit; font-size: 15.5px; font-weight: 600; min-height: 54px; padding: 0 22px; border-radius: 16px; border: 1.5px solid var(--border2); background: var(--panel); color: var(--text); cursor: pointer; transition: transform .12s var(--ease), box-shadow .15s; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: linear-gradient(180deg, #1F2D52, var(--navy)); border-color: var(--navy); color: #fff; box-shadow: 0 10px 22px -10px rgba(22,33,61,.6); }
+  .btn-sm { min-height: 42px; padding: 0 16px; font-size: 14px; border-radius: 12px; }
+  .btn-link { background: none; border: none; color: var(--red); min-height: 36px; padding: 0 6px; font-size: 13.5px; }
+  .btn[disabled] { opacity: .45; cursor: default; box-shadow: none; }
+
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: linear-gradient(180deg, rgba(251,247,238,0), rgba(251,247,238,.96) 28%);
+    padding: 22px calc(14px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); }
+  .nav-in { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
+  .nav-in .btn { flex: 1; }
+  .nav-in .btn-back { flex: 0 0 34%; }
+
+  .msg { font-size: 14px; padding: 12px 14px; border-radius: 14px; margin-bottom: 16px; }
+  .msg.err { background: rgba(192,68,45,.08); color: var(--red); }
+  .msg.ok { background: var(--green-bg); color: var(--green); font-weight: 500; }
+  .missing-group { margin-bottom: 14px; background: var(--soft); border-radius: 14px; padding: 12px 14px; }
+  .missing-group h3 { font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .missing-group ul { list-style: none; margin-top: 4px; }
+  .missing-group li { font-size: 13px; color: var(--muted); padding: 5px 0; }
+  .goto { font: inherit; font-size: 13px; font-weight: 600; background: var(--navy); border: none; color: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .decl { display: flex; gap: 12px; align-items: flex-start; background: var(--soft); border-radius: 16px; padding: 16px; font-size: 14px; margin: 8px 0 18px; cursor: pointer; }
+  .decl input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--navy); flex-shrink: 0; }
+
+  .doc-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .doc-row span { color: var(--dim); font-size: 12.5px; display: block; }
+  .upload { display: grid; gap: 12px; margin-bottom: 16px; }
+  .upload input[type=file] { font-size: 14px; }
+
+  /* ── Pantallas centrales (bienvenida, error, final) ── */
+  .center { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: calc(28px + env(safe-area-inset-top)) 18px 40px; text-align: center; }
+  .center .card { padding: 30px 22px 26px; text-align: center; animation: fadeUp .5s var(--ease); }
+  .hero { font-size: 54px; line-height: 1; margin-bottom: 14px; display: inline-block; animation: pop .6s var(--ease); }
+  .center h1 { font-size: 27px; }
+  .lead { color: var(--muted); font-size: 15.5px; margin: 10px 0 22px; }
+  .perks { list-style: none; text-align: left; margin: 0 0 22px; display: grid; gap: 12px; }
+  .perks li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; }
+  .perks .pi { width: 38px; height: 38px; border-radius: 12px; background: var(--soft); display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+  .perks b { display: block; font-size: 14.5px; }
+  .perks small { color: var(--muted); font-size: 13px; }
+  .center .btn { width: 100%; }
+  .brandline { font-family: 'Fraunces', serif; color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+  .brandline b { color: var(--gold-ink); }
+  .loader-ring { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--gold); animation: spin .8s linear infinite; margin: 30vh auto 0; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+  .confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall 3.2s ease-in forwards; }
+
+  /* ── Menú de secciones ── */
+  .sheet-bg { position: fixed; inset: 0; background: rgba(14,23,41,.45); z-index: 40; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--bg); border-radius: 24px 24px 0 0; max-height: 80dvh; overflow: auto;
+    padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); animation: fadeUp .3s var(--ease); max-width: 680px; margin: 0 auto; }
+  .sheet h2 { font-family: 'Fraunces', serif; font-size: 20px; margin-bottom: 12px; }
+  .sheet-item { display: flex; align-items: center; gap: 12px; width: 100%; font: inherit; text-align: left; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .sheet-item.active { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-bg); }
+  .sheet-item .e { font-size: 22px; }
+  .sheet-item .t { flex: 1; font-weight: 600; font-size: 14.5px; }
+  .sheet-item small { display: block; font-weight: 400; color: var(--dim); font-size: 12px; }
+  .sheet-item .ok { color: var(--green); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div id="boot"><div class="loader-ring"></div></div>
+
+<div id="error-screen" class="center hidden">
+  <div class="card">
+    <div class="hero">🔗</div>
+    <h1>Este enlace no está disponible</h1>
+    <p class="lead" id="error-text"></p>
+  </div>
+</div>
+
+<!-- Bienvenida -->
+<div id="welcome-screen" class="center hidden">
+  <div class="brandline"><b>Visapp</b> · Ing. Luis Eduardo Rangel Llanes</div>
+  <div class="card">
+    <div class="hero" id="w-emoji">👋</div>
+    <h1 id="w-title"></h1>
+    <p class="lead" id="w-lead"></p>
+    <ul class="perks">
+      <li><div class="pi">⏱️</div><div><b>Unos 20 minutos</b><small>De 5 en 5 preguntas, sin prisa.</small></div></li>
+      <li><div class="pi">💾</div><div><b>Se guarda solo</b><small>Puedes pausar y seguir cuando quieras con este mismo enlace.</small></div></li>
+      <li><div class="pi">↩️</div><div><b>Puedes regresar</b><small>¿Te falta un dato? Ve a buscarlo y vuelve a cambiar cualquier respuesta.</small></div></li>
+      <li><div class="pi">🔒</div><div><b>Es confidencial</b><small>Solo tu asesor ve lo que escribes.</small></div></li>
+    </ul>
+    <p class="tip" style="margin-bottom:18px">Ten a la mano tu <b>pasaporte</b> (y tu visa anterior, si tuviste).</p>
+    <button class="btn btn-primary" id="start-btn">Comenzar</button>
+  </div>
+</div>
+
+<!-- Final -->
+<div id="done-screen" class="center hidden">
+  <div class="card">
+    <div class="hero">🎉</div>
+    <h1>¡Listo, <span id="done-name"></span>!</h1>
+    <p class="lead">Recibimos tu información. Tu asesor, el Ing. Luis Eduardo Rangel Llanes, la revisará y te contactará para los siguientes pasos. ¡Gracias por tu tiempo!</p>
+    <button class="btn" id="done-back">Revisar o editar mis respuestas</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="ring" id="ring"><b id="ring-pct">0%</b></div>
+      <div class="hdr-text">
+        <div class="hdr-title" id="hdr-title"></div>
+        <div class="hdr-sub"><span id="hdr-sub"></span> <span class="save-state" id="save-state"></span></div>
+      </div>
+      <button class="menu-btn" id="menu-btn" type="button">Secciones</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="cheer"></div>
+    <div id="step-body"></div>
+  </main>
+
+  <div class="nav"><div class="nav-in">
+    <button class="btn btn-back" id="btn-back" type="button">← Atrás</button>
+    <button class="btn btn-primary" id="btn-next" type="button">Siguiente →</button>
+  </div></div>
+
+  <div id="sheet-wrap" class="hidden">
+    <div class="sheet-bg" id="sheet-bg"></div>
+    <div class="sheet" role="dialog" aria-label="Secciones"><h2>Ir a una sección</h2><div id="steps"></div></div>
+  </div>
+</div>
+
+<div id="datalists"></div>
+<div id="confetti" class="confetti"></div>
+
+<script src="/ds160-logic.js"></script>
+<script>
+(function () {
+  var DS = window.DS160;
+  var token = (location.pathname.split('/')[2] || '').trim();
+  var API = '/api/visa/s/' + encodeURIComponent(token);
+  var PAGE_SIZE = 5;
+
+  // Textos cálidos por sección (solo presentación).
+  var FRIENDLY = {
+    personal: { e: '👤', tip: 'Empecemos por lo básico. Escribe tu nombre tal como aparece en tu pasaporte.' },
+    contacto: { e: '🏠', tip: '¿Dónde vives y cómo te localizamos? Incluye tus redes sociales de los últimos 5 años.' },
+    pasaporte: { e: '🛂', tip: 'Ten tu pasaporte a la mano; copia los datos tal cual aparecen.' },
+    viaje: { e: '✈️', tip: 'Cuéntanos de tu viaje. Responde con lo que tengas pensado hasta ahora.' },
+    contactoEEUU: { e: '📍', tip: 'Una persona u organización en EE. UU. (puede ser el hotel donde te hospedarás).' },
+    familia: { e: '👨‍👩‍👧', tip: 'Datos de tus padres y familiares en Estados Unidos.' },
+    trabajo: { e: '💼', tip: 'A qué te dedicas y dónde has trabajado o estudiado.' },
+    adicional: { e: '🌎', tip: 'Algunas preguntas generales sobre ti.' },
+    seguridad: { e: '🛡️', tip: 'Son preguntas estándar del gobierno de EE. UU. Responde con sinceridad; casi todas son "No".' },
+    docs: { e: '📎', tip: '' }, review: { e: '✅', tip: '' }
+  };
+  var emoji = function (id) { return (FRIENDLY[id] || {}).e || '📝'; };
+
+  var schema = null, data = {}, docs = [], clientName = '', submittedAt = null;
+  var steps = [], stepIdx = 0;
+  var dirty = {}, saveTimer = null, saving = false, queued = false;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtSize(b) { return b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }
+
+  function http(method, url, body, isForm) {
+    var opts = { method: method, headers: {} };
+    if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    if (isForm) opts.body = body;
+    return fetch(url, opts).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) { var e = new Error(d.error || 'Error de red'); e.payload = d; e.status = res.status; throw e; }
+        return d;
+      });
+    });
+  }
+
+  // ── Datos por ruta ("lista.0.campo") ────────────────────────────────────
+  function setAt(path, value) {
+    var parts = path.split('.'), last = parts.pop(), scope = data;
+    parts.forEach(function (p) { scope = scope[p]; });
+    scope[last] = value;
+    dirty[path.split('.')[0]] = true;
+  }
+  function getAt(path) {
+    var v = data;
+    path.split('.').forEach(function (p) { v = v == null ? undefined : v[p]; });
+    return v;
+  }
+
+  // ── Render de campos ────────────────────────────────────────────────────
+  function fieldHtml(f, scope, path) {
+    if (!DS.isVisible(f, scope)) return '';
+    var key = path ? path + '.' + f.id : f.id;
+    var domId = 'f_' + key.replace(/\./g, '_');
+    var val = scope[f.id];
+    if (val == null) val = '';
+    if (f.type === 'list') return listHtml(f, scope, key);
+
+    var isNA = val === DS.NA;
+    var label = esc(f.label) + (f.optional ? '<span class="opt">(opcional)</span>' : '');
+    var html = '<div class="field" data-field="' + esc(key) + '">';
+
+    if (f.type === 'yesno') {
+      html += '<div class="lbl" id="' + domId + '_l">' + label + '</div>' +
+        '<div class="yn" role="group" aria-labelledby="' + domId + '_l">' +
+        '<button type="button" class="' + (val === 'si' ? 'on' : '') + '" data-yn="' + esc(key) + '" data-v="si" aria-pressed="' + (val === 'si') + '">Sí</button>' +
+        '<button type="button" class="no ' + (val === 'no' ? 'on' : '') + '" data-yn="' + esc(key) + '" data-v="no" aria-pressed="' + (val === 'no') + '">No</button></div>';
+    } else {
+      html += '<label for="' + domId + '">' + label + '</label>';
+      var dis = isNA ? ' disabled' : '', v = isNA ? '' : val;
+      if (f.type === 'textarea') {
+        html += '<textarea id="' + domId + '" data-path="' + esc(key) + '"' + dis + '>' + esc(v) + '</textarea>';
+      } else if (f.type === 'select') {
+        html += '<select id="' + domId + '" data-path="' + esc(key) + '" data-select="1"><option value="">Elige una opción…</option>' +
+          f.options.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === val ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>';
+      } else {
+        var type = { date: 'date', tel: 'tel', email: 'email', number: 'number' }[f.type] || 'text';
+        var extra = '';
+        if (type === 'tel') extra += ' inputmode="tel" autocomplete="off"';
+        if (type === 'number') extra += ' inputmode="numeric" min="0"';
+        if (type === 'email') extra += ' inputmode="email" autocomplete="off" autocapitalize="off"';
+        if (f.list) extra += ' list="dl_' + f.list + '"';
+        html += '<input type="' + type + '" id="' + domId + '" data-path="' + esc(key) + '" value="' + esc(v) + '"' + extra + dis + '>';
+      }
+      if (f.na) html += '<label class="na-row"><input type="checkbox" data-na="' + esc(key) + '"' + (isNA ? ' checked' : '') + '> ' + esc(f.na) + '</label>';
+    }
+    if (f.help) html += '<div class="help">' + esc(f.help) + '</div>';
+    return html + '</div>';
+  }
+
+  function listHtml(f, scope, key) {
+    var items = Array.isArray(scope[f.id]) ? scope[f.id] : [];
+    var html = '<div class="list" data-list="' + esc(key) + '"><div class="list-title">' + esc(f.label) + '</div>';
+    items.forEach(function (it, i) {
+      var p = key + '.' + i;
+      html += '<div class="list-item"><div class="list-item-hd"><span>' + esc(f.itemLabel) + ' ' + (i + 1) + '</span>' +
+        ((items.length > 1 || !f.min) ? '<button type="button" class="btn btn-link" data-remove="' + esc(key) + '" data-i="' + i + '">Quitar</button>' : '') + '</div>' +
+        f.fields.map(function (sf) { return fieldHtml(sf, it || {}, p); }).join('') + '</div>';
+    });
+    if (items.length < (f.max || 10)) html += '<button type="button" class="btn btn-sm" data-add="' + esc(key) + '">+ ' + esc(f.addLabel) + '</button>';
+    return html + '</div>';
+  }
+
+  // Al mostrarse una lista vacía, crea el primer elemento para que no haya que pulsar "agregar".
+  function ensureLists() {
+    var changed = false;
+    schema.sections.forEach(function (s) {
+      s.fields.forEach(function (f) {
+        if (f.type !== 'list' || !DS.isVisible(f, data)) return;
+        if (!Array.isArray(data[f.id]) || !data[f.id].length) { data[f.id] = [{}]; dirty[f.id] = true; changed = true; }
+      });
+    });
+    if (changed) scheduleSave(600);
+  }
+
+  // ── Pasos: páginas de 5 preguntas ───────────────────────────────────────
+  // Una "pregunta" es un campo sin condición más los que dependen de ella (van justo después).
+  function buildSteps() {
+    steps = [];
+    schema.sections.forEach(function (s) {
+      var blocks = [];
+      s.fields.forEach(function (f) {
+        if (!f.showIf || !blocks.length) blocks.push([f]); else blocks[blocks.length - 1].push(f);
+      });
+      var pages = [];
+      for (var i = 0; i < blocks.length; i += PAGE_SIZE) pages.push([].concat.apply([], blocks.slice(i, i + PAGE_SIZE)));
+      pages.forEach(function (fields, n) {
+        steps.push({ id: s.id, title: s.title, section: s, fields: fields, page: n + 1, pages: pages.length,
+          from: n * PAGE_SIZE + 1, to: Math.min((n + 1) * PAGE_SIZE, blocks.length), count: blocks.length });
+      });
+    });
+    steps.push({ id: 'docs', title: 'Documentos' });
+    steps.push({ id: 'review', title: 'Revisar y enviar' });
+  }
+
+  function cheerFor(pct) {
+    if (pct >= 100) return ['🏁', '¡Todo completo! Solo falta enviar.'];
+    if (pct >= 75) return ['🚀', '¡Ya casi terminas! Te falta muy poco.'];
+    if (pct >= 50) return ['🎯', '¡Ya pasaste la mitad! Sigue así.'];
+    if (pct >= 25) return ['💪', '¡Vas muy bien! Llevas un buen avance.'];
+    if (pct > 0) return ['🌱', '¡Buen comienzo!'];
+    return null;
+  }
+
+  function renderHeader() {
+    var comp = DS.completion(schema.sections, data);
+    var s = steps[stepIdx];
+    $('ring').style.setProperty('--p', comp.pct);
+    $('ring-pct').textContent = comp.pct + '%';
+    $('hdr-title').textContent = emoji(s.id) + ' ' + s.title;
+    var mins = Math.max(1, Math.round(comp.missing.length * 12 / 60));
+    $('hdr-sub').textContent = comp.missing.length ? 'Faltan unos ' + mins + ' min' : '¡Todo listo!';
+    // menú de secciones
+    var seen = {};
+    $('steps').innerHTML = steps.map(function (st, i) {
+      if (seen[st.id]) return '';
+      seen[st.id] = true;
+      var b = comp.bySection[st.id], done = false, meta = '';
+      if (st.section && b) { done = b.total > 0 && b.filled === b.total; meta = b.filled + ' de ' + b.total + ' respondidas'; }
+      if (st.id === 'docs') meta = docs.length + ' subido(s) · opcional';
+      if (st.id === 'review') { done = !!submittedAt; meta = submittedAt ? 'Enviada' : 'Al terminar'; }
+      return '<button type="button" class="sheet-item' + (s.id === st.id ? ' active' : '') + '" data-step="' + i + '"><span class="e">' + emoji(st.id) +
+        '</span><span class="t">' + esc(st.title) + '<small>' + meta + '</small></span>' + (done ? '<span class="ok">✓</span>' : '') + '</button>';
+    }).join('');
+    return comp;
+  }
+
+  function renderStep(keepScroll) {
+    var s = steps[stepIdx], y = window.scrollY, html = '';
+    var comp = renderHeader();
+    var pageWord = s.section ? '' : '';
+    if (s.section) {
+      var fr = FRIENDLY[s.id] || {};
+      var dots = '';
+      for (var i = 1; i <= s.pages; i++) dots += '<i class="' + (i < s.page ? 'on' : i === s.page ? 'on cur' : '') + '"></i>';
+      html += '<div class="card' + (keepScroll ? '' : ' slide') + '"><div class="sec-badge">' + emoji(s.id) + '</div><h1>' + esc(s.section.title) + '</h1>' +
+        '<div class="page-dots">' + dots + '<span>Preguntas ' + s.from + '–' + s.to + ' de ' + s.count + '</span></div>' +
+        (s.page === 1 ? '<p class="tip">' + esc(fr.tip || s.section.intro || '') + '</p>' : '<div style="height:8px"></div>') +
+        s.fields.map(function (f) { return fieldHtml(f, data, ''); }).join('') + '</div>';
+    } else if (s.id === 'docs') {
+      html += docsHtml(keepScroll);
+    } else {
+      html += reviewHtml(comp, keepScroll);
+    }
+    $('step-body').innerHTML = html;
+    if (!keepScroll) {
+      var c = s.section && s.page === 1 ? cheerFor(comp.pct) : null;
+      $('cheer').innerHTML = c ? '<div class="cheer"><span class="em">' + c[0] + '</span><span>' + c[1] + '</span></div>' : '';
+    }
+    $('btn-back').style.visibility = stepIdx === 0 ? 'hidden' : 'visible';
+    var last = stepIdx === steps.length - 1;
+    $('btn-next').textContent = last ? (submittedAt ? 'Reenviar ✓' : 'Enviar solicitud ✓') : 'Siguiente →';
+    $('btn-next').disabled = false;
+    if (last) updateSubmitState();
+    if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
+  }
+
+  // ── Documentos ──────────────────────────────────────────────────────────
+  function catLabel(v) { var c = schema.documentCategories.filter(function (x) { return x.value === v; })[0]; return c ? c.label : v; }
+  function docsHtml(keepScroll) {
+    return '<div class="card' + (keepScroll ? '' : ' slide') + '"><div class="sec-badge">📎</div><h1>Documentos</h1>' +
+      '<p class="tip" style="margin-top:8px">Es opcional: si quieres, sube una foto o escaneo de tu pasaporte y de lo que tu asesor te haya pedido (imagen o PDF, máx. 20 MB). Puedes omitirlo y pulsar “Siguiente”.</p>' +
+      '<div class="upload"><div class="field" style="margin:0"><label for="doc-cat">Tipo de documento</label><select id="doc-cat">' +
+      schema.documentCategories.map(function (c) { return '<option value="' + esc(c.value) + '">' + esc(c.label) + '</option>'; }).join('') + '</select></div>' +
+      '<input type="file" id="doc-file" accept="image/*,application/pdf" aria-label="Archivo">' +
+      '<button class="btn btn-primary" id="doc-upload" type="button">Subir documento</button><div id="doc-msg"></div></div>' +
+      '<div class="list-title">Tus documentos</div><div id="doc-list" style="margin-bottom:14px">' + docListHtml() + '</div></div>';
+  }
+  function docListHtml() {
+    if (!docs.length) return '<div class="tip" style="padding:4px 0">Aún no has subido documentos.</div>';
+    return docs.map(function (d) {
+      return '<div class="doc-row"><div>' + esc(d.originalName) + '<span>' + esc(catLabel(d.category)) + ' · ' + fmtSize(d.size) + '</span></div>' +
+        '<button type="button" class="btn btn-link" data-deldoc="' + esc(d.id) + '">Eliminar</button></div>';
+    }).join('');
+  }
+
+  // ── Revisar y enviar ────────────────────────────────────────────────────
+  function reviewHtml(comp, keepScroll) {
+    var html = '<div class="card' + (keepScroll ? '' : ' slide') + '"><div class="sec-badge">✅</div><h1>Revisar y enviar</h1><div style="height:12px"></div>';
+    if (submittedAt) html += '<div class="msg ok">Tu información ya fue enviada. Si haces cambios, vuelve a pulsar “Reenviar”.</div>';
+    if (comp.missing.length) {
+      html += '<p class="tip">Casi terminas. Te faltan <b>' + comp.missing.length + '</b> respuesta(s); toca “Ir” para completarlas.</p>';
+      var groups = {};
+      comp.missing.forEach(function (m) { (groups[m.sectionId] = groups[m.sectionId] || { title: m.section, items: [] }).items.push(m); });
+      Object.keys(groups).forEach(function (id) {
+        var first = groups[id].items[0], idx = steps.findIndex(function (st) { return st.id === id && st.fields && st.fields.some(function (f) { return f.id === first.field; }); });
+        if (idx < 0) idx = steps.findIndex(function (st) { return st.id === id; });
+        html += '<div class="missing-group"><h3><span>' + emoji(id) + ' ' + esc(groups[id].title) + '</span><button type="button" class="goto" data-step="' + idx + '">Ir</button></h3><ul>' +
+          groups[id].items.slice(0, 4).map(function (m) { return '<li>• ' + esc(m.label) + '</li>'; }).join('') +
+          (groups[id].items.length > 4 ? '<li>… y ' + (groups[id].items.length - 4) + ' más</li>' : '') + '</ul></div>';
+      });
+    } else {
+      html += '<div class="msg ok">🎉 ¡Todo completo! Solo falta tu confirmación.</div>';
+    }
+    html += '<label class="decl"><input type="checkbox" id="decl"' + (data.declaracion === 'si' ? ' checked' : '') + '>' +
+      '<span>Declaro bajo protesta de decir verdad que toda la información proporcionada es verdadera y completa, y entiendo que declaraciones falsas pueden causar la negativa permanente de una visa.</span></label>' +
+      '<div id="submit-msg"></div></div>';
+    return html;
+  }
+  function updateSubmitState() {
+    if (steps[stepIdx].id !== 'review') return;
+    var comp = DS.completion(schema.sections, data);
+    $('btn-next').disabled = comp.missing.length > 0 || data.declaracion !== 'si';
+  }
+
+  // ── Guardado automático ─────────────────────────────────────────────────
+  function setSaveState(text, isErr) { var el = $('save-state'); el.textContent = text; el.className = 'save-state' + (isErr ? ' err' : ''); }
+  function scheduleSave(ms) { setSaveState('Guardando…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, ms == null ? 900 : ms); }
+  function flush() {
+    clearTimeout(saveTimer);
+    if (saving) { queued = true; return Promise.resolve(); }
+    var keys = Object.keys(dirty);
+    if (!keys.length) return Promise.resolve();
+    var patch = {};
+    keys.forEach(function (k) { patch[k] = data[k] === undefined ? '' : data[k]; });
+    dirty = {}; saving = true;
+    return http('PUT', API, { patch: patch }).then(function () {
+      saving = false;
+      if (Object.keys(dirty).length || queued) { queued = false; return flush(); }
+      setSaveState('· Guardado ✓');
+    }).catch(function () {
+      saving = false;
+      keys.forEach(function (k) { dirty[k] = true; });
+      setSaveState('· Sin conexión, reintentando…', true);
+      clearTimeout(saveTimer); saveTimer = setTimeout(flush, 4000);
+    });
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+  window.addEventListener('pagehide', function () {
+    var keys = Object.keys(dirty);
+    if (!keys.length || !window.fetch) return;
+    var patch = {}; keys.forEach(function (k) { patch[k] = data[k]; });
+    try { fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patch: patch }), keepalive: true }); } catch (e) {}
+  });
+
+  // ── Eventos ─────────────────────────────────────────────────────────────
+  function afterValueChange(rerender) {
+    ensureLists();
+    if (rerender) renderStep(true); else renderHeader();
+    updateSubmitState();
+    scheduleSave();
+  }
+  var body = $('step-body');
+  body.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!el.dataset || !el.dataset.path || el.dataset.select) return;
+    setAt(el.dataset.path, el.value);
+    afterValueChange(false);
+  });
+  body.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.dataset && el.dataset.select) { setAt(el.dataset.path, el.value); afterValueChange(true); return; }
+    if (el.dataset && el.dataset.na) {
+      var key = el.dataset.na;
+      setAt(key, el.checked ? DS.NA : '');
+      var input = body.querySelector('[data-path="' + key + '"]');
+      if (input) { input.disabled = el.checked; if (el.checked) input.value = ''; }
+      afterValueChange(false);
+      return;
+    }
+    if (el.id === 'decl') { data.declaracion = el.checked ? 'si' : 'no'; dirty.declaracion = true; updateSubmitState(); scheduleSave(300); }
+  });
+  body.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('button') : null;
+    if (!el) return;
+    if (el.dataset.yn) { setAt(el.dataset.yn, el.dataset.v); afterValueChange(true); return; }
+    if (el.dataset.add) {
+      var arr = getAt(el.dataset.add); if (!Array.isArray(arr)) { arr = []; setAt(el.dataset.add, arr); }
+      arr.push({}); dirty[el.dataset.add.split('.')[0]] = true; afterValueChange(true); return;
+    }
+    if (el.dataset.remove) {
+      var list = getAt(el.dataset.remove);
+      if (Array.isArray(list)) { list.splice(parseInt(el.dataset.i, 10), 1); dirty[el.dataset.remove.split('.')[0]] = true; }
+      afterValueChange(true); return;
+    }
+    if (el.dataset.step) { go(parseInt(el.dataset.step, 10)); return; }
+    if (el.dataset.deldoc) {
+      if (!confirm('¿Eliminar este documento?')) return;
+      http('DELETE', API + '/documents/' + el.dataset.deldoc).then(function () {
+        docs = docs.filter(function (d) { return d.id !== el.dataset.deldoc; });
+        $('doc-list').innerHTML = docListHtml();
+      }).catch(function (err) { alert(err.message); });
+      return;
+    }
+    if (el.id === 'doc-upload') uploadDoc(el);
+  });
+
+  function uploadDoc(btn) {
+    var file = $('doc-file').files[0], msg = $('doc-msg');
+    if (!file) { msg.innerHTML = '<div class="msg err">Selecciona un archivo</div>'; return; }
+    var fd = new FormData(); fd.append('category', $('doc-cat').value); fd.append('file', file);
+    btn.disabled = true; btn.textContent = 'Subiendo…'; msg.innerHTML = '';
+    http('POST', API + '/documents', fd, true).then(function (d) {
+      docs.push(d.document); $('doc-list').innerHTML = docListHtml(); $('doc-file').value = '';
+      msg.innerHTML = '<div class="msg ok">¡Documento subido!</div>';
+    }).catch(function (err) {
+      msg.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>';
+    }).then(function () { btn.disabled = false; btn.textContent = 'Subir documento'; });
+  }
+
+  function go(i) {
+    if (i < 0 || i >= steps.length) return;
+    flush();
+    stepIdx = i;
+    $('sheet-wrap').classList.add('hidden');
+    renderStep(false);
+  }
+  $('btn-back').addEventListener('click', function () { go(stepIdx - 1); });
+  $('btn-next').addEventListener('click', function () { if (stepIdx < steps.length - 1) go(stepIdx + 1); else submit(); });
+  $('menu-btn').addEventListener('click', function () { renderHeader(); $('sheet-wrap').classList.remove('hidden'); });
+  $('sheet-bg').addEventListener('click', function () { $('sheet-wrap').classList.add('hidden'); });
+  $('steps').addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-step]') : null;
+    if (el) go(parseInt(el.dataset.step, 10));
+  });
+
+  function confetti() {
+    var colors = ['#E3BB66', '#16213D', '#1E8E5A', '#F2A596', '#7A9CC6'], html = '';
+    for (var i = 0; i < 40; i++) {
+      html += '<i style="left:' + Math.random() * 100 + '%;background:' + colors[i % colors.length] + ';animation-delay:' + (Math.random() * 0.8).toFixed(2) + 's;transform:rotate(' + Math.floor(Math.random() * 360) + 'deg)"></i>';
+    }
+    $('confetti').innerHTML = html;
+    setTimeout(function () { $('confetti').innerHTML = ''; }, 4500);
+  }
+
+  function submit() {
+    var btn = $('btn-next'), msg = $('submit-msg');
+    btn.disabled = true; btn.textContent = 'Enviando…'; msg.innerHTML = '';
+    clearTimeout(saveTimer);
+    var wait = function () { return saving ? new Promise(function (r) { setTimeout(r, 300); }).then(wait) : flush(); };
+    wait().then(function () { return http('POST', API + '/submit'); }).then(function () {
+      submittedAt = new Date().toISOString();
+      $('app').classList.add('hidden');
+      $('done-name').textContent = clientName.split(' ')[0];
+      $('done-screen').classList.remove('hidden');
+      window.scrollTo(0, 0);
+      confetti();
+    }).catch(function (err) {
+      msg.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>';
+      btn.disabled = false; btn.textContent = submittedAt ? 'Reenviar ✓' : 'Enviar solicitud ✓';
+    });
+  }
+  $('done-back').addEventListener('click', function () {
+    $('done-screen').classList.add('hidden'); $('app').classList.remove('hidden');
+    stepIdx = steps.length - 1; renderStep(false);
+  });
+
+  // ── Arranque ────────────────────────────────────────────────────────────
+  function fail(text) { $('boot').classList.add('hidden'); $('error-text').textContent = text; $('error-screen').classList.remove('hidden'); }
+  function datalistsHtml() {
+    return Object.keys(schema.datalists).map(function (k) {
+      return '<datalist id="dl_' + k + '">' + schema.datalists[k].map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+    }).join('');
+  }
+
+  // Primera página que aún tiene algo sin responder (para "Continuar").
+  function firstPendingStep() {
+    var comp = DS.completion(schema.sections, data);
+    if (!comp.missing.length) return steps.length - 1;
+    var m = comp.missing[0];
+    var idx = steps.findIndex(function (st) { return st.id === m.sectionId && st.fields && st.fields.some(function (f) { return f.id === m.field; }); });
+    return idx < 0 ? 0 : idx;
+  }
+
+  function showWelcome() {
+    var comp = DS.completion(schema.sections, data), first = clientName.split(' ')[0];
+    var started = comp.pct > 0;
+    $('w-emoji').textContent = submittedAt ? '🙌' : started ? '😊' : '👋';
+    $('w-title').textContent = submittedAt ? '¡Qué gusto verte, ' + first + '!' : started ? '¡Qué bueno verte de nuevo, ' + first + '!' : '¡Hola, ' + first + '!';
+    $('w-lead').textContent = submittedAt ? 'Ya enviaste tu información. Si necesitas cambiar algo, puedes entrar y corregirlo.'
+      : started ? 'Llevas ' + comp.pct + '% de tu solicitud. Continuamos donde te quedaste.'
+      : 'Vamos a llenar juntos tu solicitud de visa, paso a paso. Es más sencillo de lo que parece.';
+    $('start-btn').textContent = submittedAt ? 'Revisar mis respuestas' : started ? 'Continuar donde me quedé' : 'Comenzar';
+    $('boot').classList.add('hidden');
+    $('welcome-screen').classList.remove('hidden');
+    $('start-btn').onclick = function () {
+      $('welcome-screen').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      stepIdx = submittedAt ? 0 : started ? firstPendingStep() : 0;
+      renderStep(false);
+    };
+  }
+
+  Promise.all([http('GET', '/api/visa/schema'), http('GET', API)]).then(function (r) {
+    schema = r[0];
+    var st = r[1];
+    clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt;
+    $('datalists').innerHTML = datalistsHtml();
+    buildSteps();
+    ensureLists();
+    showWelcome();
+  }).catch(function (err) {
+    fail(err.status === 404 ? err.message : 'No pudimos cargar tu solicitud. Revisa tu conexión e intenta de nuevo.');
+  });
+})();
+</script>
+</body>
+</html>
