@@ -378,6 +378,35 @@ const SECTIONS = [
   },
 ];
 
+
+// Ayuda "¿Dónde lo encuentro?" (se muestra bajo el campo; `hl` resalta la zona en el esquema del pasaporte).
+const WHERE = {
+  apellidos: { hl: 'surnames', text: 'Aparece en la página de tu pasaporte con tu foto, en el campo "Apellidos". Escríbelos igual que ahí, con todos los apellidos.' },
+  nombres: { hl: 'given', text: 'Aparece en la página de tu pasaporte con tu foto, en el campo "Nombres".' },
+  nombreNativo: { text: 'Es tu nombre completo en tu idioma. En México normalmente es el mismo nombre que aparece en tu pasaporte.' },
+  fechaNacimiento: { hl: 'dob', text: 'Aparece en tu pasaporte y en tu acta de nacimiento.' },
+  ciudadNacimiento: { hl: 'pob', text: 'En tu acta de nacimiento o en el campo "Lugar de nacimiento" de tu pasaporte.' },
+  estadoNacimiento: { hl: 'pob', text: 'El estado donde naciste; aparece en tu acta de nacimiento.' },
+  idNacional: { text: 'En México normalmente es tu CURP: 18 letras y números. La encuentras en tu acta de nacimiento, en tu INE o descargándola en gob.mx/curp.' },
+  ssn: { text: 'El Número de Seguro Social de EE. UU. solo lo tienen quienes han trabajado o vivido allá. Si nunca te asignaron uno, marca "No aplica".' },
+  taxId: { text: 'Es un número fiscal de EE. UU. (ITIN). Si nunca te asignaron uno, marca "No aplica".' },
+  pasaporteNumero: { hl: 'number', text: 'Es el número impreso en la página de datos de tu pasaporte (arriba a la derecha y repetido en las líneas de abajo).' },
+  pasaporteLibreta: { text: 'Algunos pasaportes tienen un segundo número de libreta. Si el tuyo no lo trae, marca "No aplica".' },
+  pasaportePaisEmisor: { hl: 'authority', text: 'El país que emitió tu pasaporte, normalmente México.' },
+  pasaporteCiudad: { hl: 'authority', text: 'Busca "Autoridad" o "Lugar de expedición" en la página de datos de tu pasaporte.' },
+  pasaporteEstado: { hl: 'authority', text: 'El estado de la oficina donde se expidió tu pasaporte (aparece junto al lugar de expedición).' },
+  pasaporteExpedicion: { hl: 'issued', text: 'Es la "Fecha de expedición" de tu pasaporte.' },
+  pasaporteVencimiento: { hl: 'expires', text: 'Es la "Fecha de vencimiento" o "Válido hasta" de tu pasaporte.' },
+  contactoNombre: { text: 'Es la persona u organización que conoces en EE. UU. Si vas de turismo y solo te hospedarás en un hotel, marca "No conozco a nadie" y escribe el hotel en el siguiente campo.' },
+  contactoOrganizacion: { text: 'Si te hospedarás en un hotel, escribe aquí el nombre del hotel (lo encuentras en tu reservación).' },
+  hospedajeCalle: { text: 'La dirección de tu hotel o del lugar donde te quedarás; está en tu reservación.' },
+  visaNumero: { text: 'Está impreso en tu visa anterior, en la parte inferior, normalmente en color rojo.' },
+  visaUltimaFecha: { text: 'Es la fecha de expedición ("Issue date") impresa en tu visa anterior.' },
+  padreFechaNac: { text: 'Si no la sabes con exactitud, marca "No la sé".' },
+  empleadorNombre: { text: 'El nombre de la empresa donde trabajas o de la escuela donde estudias, como aparece en tu credencial o recibo de nómina.' },
+};
+SECTIONS.forEach((s) => s.fields.forEach((f) => { if (WHERE[f.id]) f.where = WHERE[f.id]; }));
+
 const COUNTRIES = ('Afganistán|Albania|Alemania|Andorra|Angola|Antigua y Barbuda|Arabia Saudita|Argelia|Argentina|Armenia|Australia|Austria|Azerbaiyán|Bahamas|Bangladés|Barbados|Baréin|Bélgica|Belice|Benín|Bielorrusia|Birmania (Myanmar)|Bolivia|Bosnia y Herzegovina|Botsuana|Brasil|Brunéi|Bulgaria|Burkina Faso|Burundi|Bután|Cabo Verde|Camboya|Camerún|Canadá|Catar|Chad|Chile|China|Chipre|Colombia|Comoras|Corea del Norte|Corea del Sur|Costa de Marfil|Costa Rica|Croacia|Cuba|Dinamarca|Dominica|Ecuador|Egipto|El Salvador|Emiratos Árabes Unidos|Eritrea|Eslovaquia|Eslovenia|España|Estados Unidos|Estonia|Esuatini|Etiopía|Filipinas|Finlandia|Fiyi|Francia|Gabón|Gambia|Georgia|Ghana|Granada|Grecia|Guatemala|Guinea|Guinea Ecuatorial|Guinea-Bisáu|Guyana|Haití|Honduras|Hong Kong|Hungría|India|Indonesia|Irak|Irán|Irlanda|Islandia|Islas Marshall|Islas Salomón|Israel|Italia|Jamaica|Japón|Jordania|Kazajistán|Kenia|Kirguistán|Kiribati|Kosovo|Kuwait|Laos|Lesoto|Letonia|Líbano|Liberia|Libia|Liechtenstein|Lituania|Luxemburgo|Macao|Macedonia del Norte|Madagascar|Malasia|Malaui|Maldivas|Malí|Malta|Marruecos|Mauricio|Mauritania|México|Micronesia|Moldavia|Mónaco|Mongolia|Montenegro|Mozambique|Namibia|Nauru|Nepal|Nicaragua|Níger|Nigeria|Noruega|Nueva Zelanda|Omán|Países Bajos|Pakistán|Palaos|Palestina|Panamá|Papúa Nueva Guinea|Paraguay|Perú|Polonia|Portugal|Puerto Rico|Reino Unido|República Centroafricana|República Checa|República del Congo|República Democrática del Congo|República Dominicana|Ruanda|Rumania|Rusia|Samoa|San Cristóbal y Nieves|San Marino|San Vicente y las Granadinas|Santa Lucía|Santo Tomé y Príncipe|Senegal|Serbia|Seychelles|Sierra Leona|Singapur|Siria|Somalia|Sri Lanka|Sudáfrica|Sudán|Sudán del Sur|Suecia|Suiza|Surinam|Tailandia|Taiwán|Tanzania|Tayikistán|Timor Oriental|Togo|Tonga|Trinidad y Tobago|Túnez|Turkmenistán|Turquía|Tuvalu|Ucrania|Uganda|Uruguay|Uzbekistán|Vanuatu|Ciudad del Vaticano|Venezuela|Vietnam|Yemen|Yibuti|Zambia|Zimbabue').split('|');
 
 const DATALISTS = {
@@ -414,4 +443,12 @@ const DOCUMENT_CATEGORIES = [
   { value: 'otro', label: 'Otro documento' },
 ];
 
-module.exports = { SECTIONS, DATALISTS, STATUS_OPTIONS, DOCUMENT_CATEGORIES };
+// Qué se copia al agregar a otro integrante de la misma familia / grupo de viaje.
+const FAMILY_COPY = [
+  { id: 'domicilio', label: 'Domicilio', fields: ['calle', 'ciudad', 'estado', 'cp', 'pais', 'mismoDomicilioPostal', 'postalCalle', 'postalCiudad', 'postalEstado', 'postalCp', 'postalPais'] },
+  { id: 'viaje', label: 'Datos del viaje (fechas, hospedaje, quién paga)', fields: ['visaTipo', 'visaTipoOtro', 'planesEspecificos', 'fechaLlegada', 'vueloLlegada', 'ciudadLlegada', 'fechaSalida', 'vueloSalida', 'ciudadSalida', 'lugaresVisitar', 'fechaLlegadaEstimada', 'estanciaNumero', 'estanciaUnidad', 'hospedajeCalle', 'hospedajeCalle2', 'hospedajeCiudad', 'hospedajeEstado', 'hospedajeCp', 'quienPaga', 'pagadorNombre', 'pagadorTel', 'pagadorCorreo', 'pagadorRelacion', 'pagadorDomicilio'] },
+  { id: 'contactoEEUU', label: 'Contacto en EE. UU.', fields: ['contactoNombre', 'contactoOrganizacion', 'contactoRelacion', 'contactoCalle', 'contactoCalle2', 'contactoCiudad', 'contactoEstado', 'contactoCp', 'contactoTel', 'contactoCorreo'] },
+  { id: 'padres', label: 'Datos de los padres (para hermanos)', fields: ['padreApellidos', 'padreNombres', 'padreFechaNac', 'padreEnEEUU', 'padreEstatus', 'madreApellidos', 'madreNombres', 'madreFechaNac', 'madreEnEEUU', 'madreEstatus'] },
+];
+
+module.exports = { SECTIONS, DATALISTS, STATUS_OPTIONS, DOCUMENT_CATEGORIES, FAMILY_COPY };

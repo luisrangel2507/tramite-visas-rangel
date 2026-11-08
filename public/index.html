@@ -3,657 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
-<title>Visapp — Panel</title>
+<meta name="theme-color" content="#4d6f9f">
+<title>Visapp — Gestión de visas desde tu celular</title>
+<meta name="description" content="Llena tu formulario DS-160 desde el celular, paso a paso y con apoyo de un asesor. Trámite de tu cita de visa americana.">
 <link rel="icon" href="/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #F5F2EA; --panel: #FFFFFF; --panel-soft: #FBF9F4;
-    --border: rgba(22,33,61,.10); --border2: rgba(22,33,61,.20);
-    --text: #16213D; --muted: #5C6B85; --dim: #7C879C;
-    --navy: #16213D; --navy-deep: #0E1729;
-    --gold: #A8791F; --gold-ink: #7A5A16; --gold-bg: rgba(168,121,31,.12); --gold-soft: #D9B15C;
-    --green: #1E8E5A; --red: #C0442D; --amber: #B15F14; --amber-bg: rgba(177,95,20,.12);
-    --ease: cubic-bezier(.32,.72,0,1);
-    --shadow-sm: 0 1px 2px rgba(22,33,61,.06);
-    --shadow-md: 0 14px 34px -16px rgba(22,33,61,.28), 0 2px 8px rgba(22,33,61,.06);
-  }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; line-height: 1.45; -webkit-font-smoothing: antialiased; }
-  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(168,121,31,.09) 0%, transparent 60%); }
-  a { color: var(--gold-ink); }
-  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  :root { --navy: #16213D; --navy-deep: #0E1A38; --gold: #B8841F; --gold-soft: #E3BB66; --muted: #5C6B85; --bg: #F5F8FD; --border: rgba(22,33,61,.1); --green: #1FA855; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; color: var(--navy); background: var(--bg); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+  h1, h2, h3, .wm { font-family: 'Montserrat', sans-serif; letter-spacing: -.02em; }
+  :focus-visible { outline: 3px solid rgba(184,132,31,.6); outline-offset: 2px; }
+
+  .hero { position: relative; overflow: hidden; color: #fff; padding: calc(18px + env(safe-area-inset-top)) 0 90px;
+    background: linear-gradient(180deg, #3f6296 0%, #7f9cc4 45%, #e6b392 80%, #f3d5c3 100%); }
+  .hero::after { content: ''; position: absolute; left: -10%; right: -10%; bottom: -1px; height: 90px; background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+  .clouds { position: absolute; inset: auto 0 20px 0; height: 140px; filter: blur(14px); opacity: .8; pointer-events: none;
+    background: radial-gradient(70px 26px at 12% 60%, #fff 0, transparent 70%), radial-gradient(100px 30px at 40% 40%, #fff 0, transparent 70%), radial-gradient(80px 26px at 70% 65%, #ffe9d6 0, transparent 70%), radial-gradient(90px 28px at 92% 45%, #fff 0, transparent 70%); }
+  .trail { position: absolute; bottom: 120px; right: 0; width: min(42vw, 260px); opacity: .9; pointer-events: none; transform: scaleX(-1); }
+  nav { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; }
+  .brand img { width: 40px; height: 40px; filter: drop-shadow(0 6px 10px rgba(10,19,48,.3)); } .brand span { color: var(--gold-soft); }
+  .nav-link { font-size: 14px; font-weight: 600; text-decoration: none; background: rgba(255,255,255,.18); padding: 8px 14px; border-radius: 999px; backdrop-filter: blur(6px); }
+  .hero-body { position: relative; z-index: 2; padding: 56px 0 10px; max-width: 620px; }
+  .hero h1 { font-size: clamp(32px, 7vw, 52px); font-weight: 800; line-height: 1.08; text-shadow: 0 2px 20px rgba(10,19,48,.25); }
+  .hero p { font-size: clamp(16px, 2.6vw, 19px); margin: 16px 0 26px; max-width: 520px; text-shadow: 0 1px 12px rgba(10,19,48,.3); }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 9px; font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; padding: 15px 24px; border-radius: 16px; border: none; cursor: pointer; transition: transform .12s; }
+  .btn:active { transform: scale(.97); }
+  .btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-wa { background: var(--green); color: #fff; box-shadow: 0 14px 28px -12px rgba(10,80,40,.7); }
+  .btn-light { background: rgba(255,255,255,.95); color: var(--navy); }
   .hidden { display: none !important; }
 
-  #boot-loader { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: var(--bg); transition: opacity .35s var(--ease), visibility .35s; }
-  #boot-loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-  .loader-ring { width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--gold); animation: spin .8s linear infinite; }
-
-  .topbar { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35);
-    padding: calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 12px calc(18px + env(safe-area-inset-left)); }
-  .brand { display: flex; align-items: center; gap: 10px; color: #EFE7D6; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.3px; }
-  .brand-mark { width: 34px; height: 34px; display: block; }
-  .brand span { color: var(--gold-soft); }
-  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #A9B2C6; }
-  .wrap { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 22px 16px 80px; }
-
-  .btn { font: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--border2); background: var(--panel); color: var(--text); padding: 10px 16px; border-radius: 10px; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform .12s var(--ease), border-color .15s; }
-  .btn:active { transform: scale(.97); }
-  .btn:hover { border-color: var(--gold); }
-  .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
-  .btn-primary:hover { background: var(--navy-deep); border-color: var(--gold-soft); }
-  .btn-wa { background: #1FA855; border-color: #1FA855; color: #fff; }
-  .btn-wa:hover { background: #178A45; border-color: #178A45; }
-  .btn-ghost { background: transparent; border-color: transparent; color: #A9B2C6; box-shadow: none; padding: 8px 10px; }
-  .btn-ghost:hover { color: #fff; border-color: transparent; }
-  .btn-danger { border-color: rgba(192,68,45,.35); color: var(--red); background: rgba(192,68,45,.07); }
-  .btn-sm { padding: 7px 12px; font-size: 12.5px; }
-  .btn[disabled] { opacity: .5; cursor: default; }
-
-
-  /* ── LOGIN (escena de aeropuerto al atardecer) ── */
-  #auth-screen { position: fixed; inset: 0; z-index: 10; overflow: auto; background: linear-gradient(180deg, #4d6f9f 0%, #7f9cc4 15%, #e6b392 27%, #f3d5c3 33%, #e7ecf6 46%, #eef1f8 100%); }
-  .scene { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-  .scene .clouds { position: absolute; left: -10%; right: -10%; top: 14%; height: 130px; filter: blur(14px); opacity: .85;
-    background: radial-gradient(60px 26px at 12% 60%, #fff 0, transparent 70%), radial-gradient(90px 30px at 38% 40%, #fff 0, transparent 70%), radial-gradient(70px 24px at 62% 65%, #ffe9d6 0, transparent 70%), radial-gradient(80px 28px at 88% 45%, #fff 0, transparent 70%); }
-  .scene .wing { position: absolute; top: 0; right: 0; width: min(62vw, 340px); height: auto; }
-  .scene .trail { position: absolute; top: 4%; left: 0; width: min(46vw, 220px); height: auto; }
-  .scene .swoosh { position: absolute; left: 0; bottom: 0; width: min(70vw, 360px); height: auto; }
-  .scene .passport { position: absolute; right: -52px; bottom: -70px; width: 230px; height: 300px; transform: rotate(-17deg); border-radius: 18px;
-    background: linear-gradient(150deg, #1f3566, #0a1330); box-shadow: 0 30px 50px -20px rgba(10,19,48,.6); display: grid; place-items: center; align-content: center; gap: 16px; filter: blur(.6px); }
-  .scene .passport b { font-family: 'Montserrat', sans-serif; font-size: 15px; letter-spacing: .18em; color: #C9A24C; }
-  .scene .passport svg { width: 92px; height: 92px; fill: none; stroke: #C9A24C; stroke-width: 1.4; }
-  .auth-wrap { position: relative; min-height: 100%; display: flex; align-items: center; justify-content: center;
-    padding: max(150px, 22vh) 18px 120px; }
-  .auth-card { width: 100%; max-width: 430px; background: rgba(250,251,254,.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,.8); border-radius: 30px; padding: 30px 26px 26px; text-align: center; box-shadow: 0 30px 60px -28px rgba(14,23,41,.5), 0 2px 8px rgba(14,23,41,.06); animation: fadeUp .5s var(--ease); }
-  .auth-logo { width: 82px; height: 82px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 10px 14px rgba(10,19,48,.3)); }
-  .wordmark { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 44px; letter-spacing: -1.5px; line-height: 1.1; color: #101C3F; }
-  .wordmark span { background: linear-gradient(180deg, #E3BB66, #B8841F); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .tagline { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .34em; color: #5c6b85; margin: 4px 0 14px; padding-left: .34em; }
-  .auth-sub { color: var(--muted); font-size: 14.5px; margin-bottom: 20px; }
-  .afield { text-align: left; margin-bottom: 14px; }
-  .afield label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--navy); margin-bottom: 7px; }
-  .afield label svg, .btn-setup svg, .btn-login svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-  .afield input { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: #ECEFF7; border: 1px solid rgba(22,33,61,.1); border-radius: 16px; padding: 0 16px; height: 54px; outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
-  .afield input::placeholder { color: #7a869c; }
-  .afield input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-bg); background: #fff; }
-  .pw { position: relative; }
-  .pw input { padding-right: 50px; }
-  .pw button { position: absolute; right: 6px; top: 6px; width: 42px; height: 42px; border: none; background: none; color: #4a5875; cursor: pointer; border-radius: 12px; display: grid; place-items: center; }
-  .pw button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .btn-login { width: 100%; height: 56px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px 0 26px; font: inherit; font-size: 18px; font-weight: 600; color: #fff;
-    border: none; border-radius: 18px; cursor: pointer; background: linear-gradient(100deg, #27407A, #0E1A3C); box-shadow: 0 14px 24px -12px rgba(14,26,60,.7); transition: transform .12s var(--ease); }
-  .btn-login span { flex: 1; text-align: center; padding-left: 19px; }
-  .btn-login:active { transform: scale(.98); }
-  .btn-login[disabled] { opacity: .6; }
-  .btn-setup { display: flex; align-items: center; justify-content: center; gap: 7px; width: fit-content; max-width: 100%; white-space: nowrap; margin: 16px auto 0; height: 38px; padding: 0 16px; font: inherit; font-size: 13px; font-weight: 600; color: var(--navy);
-    background: rgba(255,255,255,.7); border: 1.5px solid #C9A24C; border-radius: 999px; cursor: pointer; }
-  .btn-setup svg { width: 16px !important; height: 16px !important; }
-  .btn-setup:hover { background: #fff; }
-  #setup-form { margin-top: 16px; text-align: left; }
-
-  /* ── PANEL ── */
-  #app-screen { position: relative; z-index: 2; min-height: 100dvh; background: linear-gradient(180deg, #f6f8fd 0%, #edf1f8 100%); }
-  .topbar { justify-content: flex-start; gap: 14px; border-radius: 0 0 24px 24px; box-shadow: 0 10px 24px -14px rgba(14,23,41,.6); }
-  .vsep { width: 1px; height: 28px; background: rgba(255,255,255,.2); flex-shrink: 0; }
-  .who { flex: 1; min-width: 0; color: #E4E9F4; font-size: 14px; }
-  .who svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; flex-shrink: 0; }
-  .who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .logout { background: none; border: none; color: #E4E9F4; cursor: pointer; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
-  .logout svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .wrap { padding-bottom: 130px; }
-  .hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 18px; }
-  .hero .sub { margin: 8px 0 0; font-size: 14px; color: var(--muted); max-width: 330px; }
-  .eyebrow { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12.5px; letter-spacing: .2em; color: #5c6b85; margin-bottom: 4px; }
-  .globe { width: 130px; height: auto; flex-shrink: 0; margin-top: -4px; }
-  @media (max-width: 420px) { .globe { width: 96px; } h2.title { font-size: 27px; } }
-  .newcard { border-radius: 24px; padding: 22px 20px; box-shadow: 0 18px 38px -24px rgba(22,33,61,.4), 0 2px 8px rgba(22,33,61,.05); }
-  .req { color: var(--red); margin-left: 2px; }
-  .btn-create { width: 100%; height: 58px; display: flex; align-items: center; gap: 12px; padding: 0 0 0 20px; margin-top: 6px; overflow: hidden; border: none; border-radius: 18px; cursor: pointer;
-    font: inherit; font-size: 17px; font-weight: 600; color: #fff; background: linear-gradient(100deg, #1B2D57, #0B1630); box-shadow: 0 14px 24px -12px rgba(14,26,60,.7); transition: transform .12s var(--ease); }
-  .btn-create:active { transform: scale(.98); }
-  .btn-create[disabled] { opacity: .7; }
-  .btn-create > svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-  .btn-create span { flex: 1; text-align: left; }
-  .btn-create .go { align-self: stretch; width: 84px; display: grid; place-items: center; color: #2a1d05; clip-path: polygon(24% 0, 100% 0, 100% 100%, 0 100%); background: linear-gradient(135deg, #F0CF7A, #B8841F); }
-  .btn-create .go svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-left: 8px; }
-  .list-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px; }
-  .list-head h3 { font-family: 'Montserrat', sans-serif; font-size: 23px; font-weight: 700; color: var(--navy); letter-spacing: -.3px; }
-  .icon-btn { width: 46px; height: 42px; border-radius: 13px; border: 1px solid var(--border2); background: #fff; color: var(--navy); cursor: pointer; margin-left: 8px; display: inline-grid; place-items: center; }
-  .icon-btn.on { background: var(--navy); color: #fff; }
-  .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  #list-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-  #list-tools input, #list-tools select { flex: 1 1 200px; font: inherit; font-size: 16px; height: 46px; border-radius: 14px; border: 1px solid var(--border2); background: #fff; padding: 0 14px; outline: none; }
-  .empty-state { text-align: center; padding: 18px 10px 10px; }
-  .empty-ill { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 8px; background: #E4EAF5; display: grid; place-items: center; }
-  .empty-ill svg { width: 68px; height: 68px; fill: none; stroke: #16213D; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .empty-state h4 { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 700; color: var(--navy); }
-  .empty-state p { color: var(--muted); font-size: 15px; margin: 6px auto 16px; max-width: 280px; }
-  .btn-outline-gold { height: 50px; padding: 0 26px; border-radius: 16px; border: 1.5px solid #C9A24C; background: rgba(255,255,255,.8); color: var(--navy); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .client-card { border-radius: 18px; }
-  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 820px; margin: 0 auto;
-    background: #0E1A38; border-radius: 24px 24px 0 0; padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 30px -12px rgba(14,23,41,.5); }
-  .bottom-nav button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border: none; border-radius: 16px; background: none; color: #9FB0CF; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
-  .bottom-nav button svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .bottom-nav button.active { color: #E3BB66; background: rgba(255,255,255,.06); }
-  .bottom-nav button.active::before { content: ''; position: absolute; top: 0; left: 22%; right: 22%; height: 3px; border-radius: 0 0 3px 3px; background: #E3BB66; }
-  .field { margin-bottom: 14px; text-align: left; }
-  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-  .field input, .field select, .field textarea { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--panel-soft); border: 1px solid var(--border2); border-radius: 10px; padding: 11px 12px; outline: none; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-bg); }
-  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; }
-  .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
-  .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
-
-  h2.title { font-family: 'Montserrat', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -.6px; line-height: 1.1; color: var(--navy); }
-  .sub { color: var(--dim); font-size: 13px; margin: 2px 0 18px; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
-  .card-title { font-family: 'Montserrat', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
-  .card-title svg { width: 34px; height: 34px; fill: none; stroke: #B8841F; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-  .row .field { flex: 1; min-width: 170px; margin-bottom: 0; }
-
-  .link-box { background: var(--gold-bg); border: 1px dashed var(--gold); border-radius: 12px; padding: 14px; margin-top: 12px; }
-  .link-box .lbl { font-size: 12px; font-weight: 600; color: var(--gold-ink); margin-bottom: 6px; }
-  .link-url { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; background: var(--panel); border: 1px solid var(--border2); border-radius: 8px; padding: 9px 10px; word-break: break-all; user-select: all; }
-  .link-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-
-  .client-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 15px 16px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s, transform .15s var(--ease); animation: fadeUp .35s var(--ease) backwards; }
-  .client-card:hover { border-color: var(--gold); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-  .client-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .client-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; color: var(--navy); }
-  .client-note { font-size: 12.5px; color: var(--dim); }
-  .client-meta { font-size: 12px; color: var(--dim); margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .pills { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
-  .pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--gold-bg); color: var(--gold-ink); white-space: nowrap; }
-  .pill.tone-warn { background: var(--amber-bg); color: var(--amber); }
-  .pill.tone-good { background: rgba(30,142,90,.12); color: var(--green); }
-  .pill.tone-bad { background: rgba(192,68,45,.12); color: var(--red); }
-  .pill.sent { background: rgba(30,142,90,.12); color: var(--green); }
-  .bar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: 10px; }
-  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--navy), var(--gold)); }
-  .empty { color: var(--dim); font-size: 13.5px; text-align: center; padding: 30px 0; }
-  .back-link { display: inline-block; margin-bottom: 14px; color: var(--muted); font-size: 13.5px; cursor: pointer; font-weight: 600; }
-  .back-link:hover { color: var(--gold-ink); }
-
-  .tabs { display: flex; gap: 6px; margin: 18px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
-  .tab { font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); background: none; border: none; padding: 10px 4px; margin-right: 20px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-  .tab.active { color: var(--navy); border-color: var(--gold); }
-  .view { display: none; } .view.active { display: block; }
-
-  .ans-section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
-  .ans-hd { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; padding: 13px 16px; background: var(--panel-soft); border-bottom: 1px solid var(--border); color: var(--navy); }
-  .ans-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--border); font-size: 13.5px; }
-  .ans-row:first-of-type { border-top: none; }
-  .ans-label { color: var(--muted); flex: 1 1 52%; }
-  .ans-value { flex: 1 1 48%; font-weight: 600; text-align: right; word-break: break-word; cursor: copy; border-radius: 6px; }
-  .ans-value:hover { background: var(--gold-bg); }
-  .ans-value.empty-v { color: var(--red); font-weight: 500; cursor: default; }
-  .ans-value.opt-v { color: var(--dim); font-weight: 400; cursor: default; }
-  .ans-list { padding: 10px 16px; border-top: 1px solid var(--border); }
-  .ans-list > .ans-label { margin-bottom: 8px; font-weight: 600; color: var(--navy); }
-  .ans-item { border: 1px solid var(--border2); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
-  .ans-item-hd { font-size: 12px; font-weight: 700; color: var(--gold-ink); padding: 6px 12px; background: var(--gold-bg); }
-  .ans-item .ans-row { padding: 8px 12px; }
-  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--navy-deep); color: #fff; font-size: 13px; padding: 9px 16px; border-radius: 20px; z-index: 80; opacity: 0; pointer-events: none; transition: opacity .2s; }
-  .toast.show { opacity: 1; }
-
-  .doc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
-  .doc-row:first-of-type { border-top: none; }
-  .doc-row span { display: block; color: var(--dim); font-size: 12px; }
-  .log-item { padding: 11px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
-  .log-item:first-child { border-top: none; }
-  .log-item time { display: block; font-size: 11.5px; color: var(--dim); margin-top: 3px; }
-  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-
-  @media print {
-    body::before, .topbar, .no-print, .tabs, .back-link, .bottom-nav { display: none !important; }
-    body { background: #fff; }
-    .wrap { padding: 0; max-width: none; }
-    .view { display: none !important; } #v-answers { display: block !important; }
-    .ans-section { break-inside: avoid; border-color: #bbb; }
-    .ans-value { cursor: default; }
-  }
+  section { padding: 54px 0 10px; }
+  section h2 { font-size: clamp(26px, 5vw, 36px); font-weight: 800; text-align: center; }
+  .lead { text-align: center; color: var(--muted); max-width: 560px; margin: 10px auto 30px; }
+  .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); counter-reset: s; }
+  .step, .card { background: #fff; border: 1px solid var(--border); border-radius: 22px; padding: 24px 22px; box-shadow: 0 18px 38px -28px rgba(22,33,61,.45); }
+  .step::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F0CF7A, #B8841F); color: #2a1d05; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 12px; }
+  .step h3, .card h3 { font-size: 18px; margin-bottom: 6px; } .step p, .card p { color: var(--muted); font-size: 15px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card .ic { font-size: 28px; margin-bottom: 8px; }
+  .why { background: var(--navy-deep); color: #fff; border-radius: 28px; padding: 34px 24px; margin-top: 54px; }
+  .why h2 { color: #fff; } .why .grid { margin-top: 22px; } .why .card { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12); box-shadow: none; } .why .card p { color: #B9C4DA; }
+  details { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; }
+  summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; } summary::after { content: '+'; color: var(--gold); font-size: 22px; line-height: 1; }
+  details[open] summary::after { content: '–'; } details p { margin-top: 10px; color: var(--muted); font-size: 15px; }
+  .band { text-align: center; padding: 50px 0 30px; } .band .cta { justify-content: center; margin-top: 18px; }
+  .band .btn-light { background: #fff; border: 1px solid var(--border); }
+  footer { padding: 30px 0 calc(40px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 13px; text-align: center; }
+  footer a { color: var(--navy); } footer p { max-width: 640px; margin: 8px auto; }
+  .fab { position: fixed; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
 </style>
 </head>
 <body>
-<div id="boot-loader"><div class="loader-ring"></div></div>
-<div class="toast" id="toast" role="status"></div>
 
-<!-- ── LOGIN ── -->
-<div id="auth-screen" class="hidden">
-  <div class="scene" aria-hidden="true">
-    <div class="clouds"></div>
-    <svg class="trail" viewBox="0 0 220 110"><path d="M2 100C40 60 90 40 150 54 175 60 190 52 200 40" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/><g transform="translate(176 8) scale(1.7) rotate(60 12 12)" fill="#fff" fill-opacity=".92"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
-    <svg class="wing" viewBox="0 0 340 250"><defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E4A7C"/><stop offset=".6" stop-color="#6F8DB8"/><stop offset="1" stop-color="#B9C7DC"/></linearGradient></defs>
-      <path d="M60 0H340V190L150 150C110 140 80 112 70 70Z" fill="url(#wg)"/><path d="M60 0L70 70C80 112 110 140 150 150L340 190V175L170 130C120 112 95 70 90 0Z" fill="#fff" fill-opacity=".18"/><path d="M60 0C62 40 70 60 100 78" fill="none" stroke="#0E1A3C" stroke-opacity=".35" stroke-width="3"/></svg>
-    <svg class="swoosh" viewBox="0 0 360 130"><path d="M0 50C110 70 230 100 360 130H0Z" fill="#0E1A3C"/><path d="M0 40C110 62 230 94 360 126" fill="none" stroke="#C9A24C" stroke-width="3"/></svg>
-    <div class="passport"><b>PASAPORTE</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><ellipse cx="50" cy="50" rx="18" ry="40"/><path d="M10 50h80M16 30h68M16 70h68"/></svg></div>
-  </div>
-  <div class="auth-wrap">
-    <div class="auth-card">
-      <img class="auth-logo" src="/logo.svg" alt="">
-      <div class="wordmark">Visa<span>pp</span></div>
-      <div class="tagline">GESTIÓN DE VISAS</div>
-      <div class="auth-sub">Panel del Ing. Luis Eduardo Rangel Llanes</div>
-      <div id="auth-msg"></div>
-      <form id="login-form">
-        <div class="afield"><label for="login-email"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5 12 13l8.5-5.5"/></svg>Correo electrónico</label>
-          <input type="email" id="login-email" required autocomplete="username" placeholder="Ingresa tu correo electrónico"></div>
-        <div class="afield"><label for="login-password"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Contraseña</label>
-          <div class="pw"><input type="password" id="login-password" required autocomplete="current-password" placeholder="Ingresa tu contraseña">
-          <button type="button" id="pw-eye" aria-label="Mostrar u ocultar contraseña"><svg viewBox="0 0 24 24"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-        <button class="btn-login" type="submit"><span>Ingresar</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      </form>
-      <button type="button" class="btn-setup" id="to-setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configurar cuenta de administrador</button>
-      <form id="setup-form" class="hidden">
-        <div class="field"><label for="setup-name">Nombre completo</label><input type="text" id="setup-name" required></div>
-        <div class="field"><label for="setup-email">Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
-        <div class="field"><label for="setup-password">Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
-        <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta de administrador</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ── APP ── -->
-<div id="app-screen" class="hidden">
-  <div class="topbar">
-    <div class="brand"><img class="brand-mark" src="/logo.svg" alt=""><div>Visa<span>pp</span></div></div>
-    <i class="vsep"></i>
-    <div class="who"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span id="who-name"></span></div>
-    <button class="logout" id="logout-btn" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M16 8l4 4-4 4M20 12H9"/></svg></button>
-  </div>
-
+<header class="hero">
+  <div class="clouds"></div>
+  <svg class="trail" viewBox="0 0 220 110" aria-hidden="true"><path d="M2 100C40 60 90 40 150 54 175 60 190 52 200 40" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/><g transform="translate(176 8) scale(1.7) rotate(60 12 12)" fill="#fff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
   <div class="wrap">
-    <!-- Lista -->
-    <div id="list-area">
-      <div class="hero">
-        <div>
-          <div class="eyebrow">GESTIÓN DE VISAS</div>
-          <h2 class="title">Solicitudes</h2>
-          <div class="sub">Crea una solicitud, envía el enlace a tu cliente y revisa aquí el estatus de cada trámite.</div>
-        </div>
-        <svg class="globe" viewBox="0 0 170 150" aria-hidden="true"><defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f9cc8"/><stop offset="1" stop-color="#cbd8ec"/></linearGradient></defs>
-          <g fill="none" stroke="url(#gl)" stroke-width="2.2"><circle cx="85" cy="78" r="58"/><ellipse cx="85" cy="78" rx="26" ry="58"/><path d="M27 78h116M36 50h98M36 106h98"/></g>
-          <path d="M16 122C60 120 112 92 142 40" fill="none" stroke="#E3BB66" stroke-width="3" stroke-linecap="round" opacity=".9"/>
-          <g transform="translate(130 6) scale(1.9) rotate(45 12 12)" fill="#7f95b8"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
+    <nav aria-label="Principal">
+      <a class="brand" href="/"><img src="/logo.svg" alt=""><div>Visa<span>pp</span></div></a>
+      <a class="nav-link" href="/panel">Acceso asesor</a>
+    </nav>
+    <div class="hero-body">
+      <h1>Tu trámite de visa, sin complicaciones</h1>
+      <p>Llena tu formulario DS-160 desde el celular, paso a paso y con el apoyo de un asesor. Sin filas, sin papeleo confuso.</p>
+      <div class="cta">
+        <a class="btn btn-wa hidden" id="cta-wa" target="_blank" rel="noopener" href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>Escríbenos por WhatsApp</a>
+        <a class="btn btn-light" href="#como">¿Cómo funciona?</a>
       </div>
-
-      <div class="card newcard">
-        <div class="card-title"><svg viewBox="0 0 24 24"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><path d="M13 3v5h5v3"/><path d="M13 3l5 5"/><circle cx="18" cy="18" r="4.2"/><path d="M18 16v4M16 18h4"/></svg> Nueva solicitud</div>
-        <div class="afield"><label for="new-name"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> Nombre del cliente <b class="req">*</b></label><input type="text" id="new-name" autocomplete="off" placeholder="Ej. Juan Pérez"></div>
-        <div class="afield"><label for="new-note"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h4"/></svg> Nota interna (opcional)</label><input type="text" id="new-note" autocomplete="off" placeholder="Ej. WhatsApp 442…, seguimiento, etc."></div>
-        <button class="btn-create" id="new-btn" type="button"><svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 3 3 7z"/><path d="M21 3 10 13.5"/></svg><span>Crear enlace</span><em class="go" style="font-style:normal"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></em></button>
-        <div id="new-msg" style="margin-top:12px"></div>
-        <div id="new-link"></div>
-      </div>
-
-      <div class="list-head"><h3>Mis solicitudes</h3>
-        <div><button class="icon-btn" id="search-btn" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button class="icon-btn" id="filter-btn" type="button" aria-label="Filtrar por estado"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div></div>
-      <div id="list-tools" class="hidden">
-        <input type="search" id="search-input" placeholder="Buscar por nombre…" autocomplete="off">
-        <select id="filter-status" aria-label="Estado"></select>
-      </div>
-      <div id="apps-list"></div>
-    </div>
-
-    <!-- Configuración -->
-    <div id="settings-area" class="hidden">
-      <div class="hero"><div><div class="eyebrow">TU CUENTA</div><h2 class="title">Configuración</h2><div class="sub">Cambia tu contraseña o cierra sesión.</div></div></div>
-      <div class="card newcard">
-        <div class="card-title">Cambiar contraseña</div>
-        <div class="afield"><label for="pwd-current">Contraseña actual</label><input type="password" id="pwd-current" autocomplete="current-password"></div>
-        <div class="afield"><label for="pwd-new">Nueva contraseña (mínimo 6 caracteres)</label><input type="password" id="pwd-new" autocomplete="new-password"></div>
-        <button class="btn-login" id="pwd-save" type="button" style="margin-top:4px"><span style="padding-left:0">Actualizar contraseña</span></button>
-        <div id="pwd-msg" style="margin-top:12px"></div>
-      </div>
-      <div class="card"><div class="card-title" style="margin-bottom:10px">Sesión</div><button class="btn btn-danger" id="logout-btn2" type="button">Cerrar sesión</button></div>
-    </div>
-
-    <!-- Detalle -->
-    <div id="detail-area" class="hidden">
-      <span class="back-link" id="back">&larr; Volver a solicitudes</span>
-      <h2 class="title" id="d-name"></h2>
-      <div class="sub" id="d-sub"></div>
-
-      <div class="card no-print">
-        <div class="card-title">Enlace para el cliente</div>
-        <div class="link-url" id="d-link"></div>
-        <div class="link-actions">
-          <button class="btn btn-sm btn-primary" id="d-copy">Copiar enlace</button>
-          <button class="btn btn-sm btn-wa" id="d-wa">Enviar por WhatsApp</button>
-          <button class="btn btn-sm" id="d-regen">Generar enlace nuevo</button>
-        </div>
-        <div class="sub" style="margin:8px 0 0">Quien tenga el enlace puede ver y editar esta solicitud. “Generar enlace nuevo” invalida el anterior.</div>
-      </div>
-
-      <div class="card no-print">
-        <div class="card-title">Estado del trámite</div>
-        <div class="row">
-          <div class="field" style="flex:1 1 230px"><label for="d-status">Estado</label><select id="d-status"></select></div>
-          <div class="field" style="flex:2 1 260px"><label for="d-status-note">Nota (opcional)</label><input type="text" id="d-status-note" maxlength="500"></div>
-          <button class="btn btn-primary" id="d-status-save">Actualizar</button>
-        </div>
-        <div class="sub" id="d-status-hint" style="margin:8px 0 0"></div>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-view="v-answers">Respuestas</button>
-        <button class="tab" data-view="v-docs">Documentos</button>
-        <button class="tab" data-view="v-log">Historial</button>
-      </div>
-
-      <div id="v-answers" class="view active">
-        <div class="toolbar no-print">
-          <button class="btn btn-sm" id="copy-all">Copiar todo como texto</button>
-          <button class="btn btn-sm" id="print-btn">Imprimir / guardar PDF</button>
-        </div>
-        <div class="sub no-print" style="margin-top:0">Toca cualquier respuesta para copiarla. En rojo: obligatorias sin responder.</div>
-        <div id="answers"></div>
-      </div>
-      <div id="v-docs" class="view"><div class="card" id="d-docs"></div></div>
-      <div id="v-log" class="view"><div class="card" id="d-log"></div></div>
-
-      <div class="no-print" style="margin-top:24px"><button class="btn btn-danger btn-sm" id="d-delete">Eliminar esta solicitud</button></div>
     </div>
   </div>
-  <nav class="bottom-nav" aria-label="Navegación"><button type="button" data-nav="apps" class="active"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Solicitudes</button><button type="button" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuración</button></nav>
-</div>
+</header>
 
-<script src="/ds160-logic.js"></script>
+<main>
+  <section id="como"><div class="wrap">
+    <h2>Así de fácil</h2>
+    <p class="lead">Tú llenas tus datos, nosotros nos encargamos del resto.</p>
+    <div class="steps">
+      <div class="step"><h3>Recibes tu enlace</h3><p>Tu asesor te manda por WhatsApp un enlace personal. No necesitas crear cuenta ni contraseña.</p></div>
+      <div class="step"><h3>Llenas tu información</h3><p>Unos 20 minutos, de 5 en 5 preguntas. Se guarda sola y puedes pausar y continuar cuando quieras.</p></div>
+      <div class="step"><h3>Nosotros hacemos el trámite</h3><p>Revisamos tus datos, gestionamos tu cita y te mantenemos al tanto de cada paso.</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>Lo que hacemos por ti</h2>
+    <p class="lead">Acompañamiento de principio a fin en tu trámite de visa americana.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">📝</div><h3>Formulario DS-160</h3><p>Te guiamos para llenar la solicitud en línea sin errores, con ayuda en cada pregunta.</p></div>
+      <div class="card"><div class="ic">📅</div><h3>Trámite de tu cita</h3><p>Gestionamos tus citas de biométricos (CAS) y de entrevista consular.</p></div>
+      <div class="card"><div class="ic">🔔</div><h3>Seguimiento</h3><p>Te avisamos cuando haya novedades y resolvemos tus dudas por WhatsApp.</p></div>
+    </div>
+    <div class="why">
+      <h2>¿Por qué Visapp?</h2>
+      <div class="grid">
+        <div class="card"><div class="ic">📱</div><h3>Desde tu celular</h3><p>Todo en un solo enlace, sin instalar nada.</p></div>
+        <div class="card"><div class="ic">🔒</div><h3>Tus datos protegidos</h3><p>Solo tu asesor los ve y se eliminan 2 meses después de tu cita.</p></div>
+        <div class="card"><div class="ic">💬</div><h3>Con acompañamiento</h3><p>Un asesor real te responde por WhatsApp.</p></div>
+      </div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap" style="max-width:720px">
+    <h2>Preguntas frecuentes</h2>
+    <p class="lead">Lo que más nos preguntan.</p>
+    <details><summary>¿Cuánto cuesta el servicio?</summary><p>Depende de lo que necesites y de cuántas personas viajen. Escríbenos por WhatsApp y te cotizamos sin compromiso.</p></details>
+    <details><summary>¿Me garantizan la visa?</summary><p>No. Nadie puede garantizarla: la decisión es únicamente del consulado de Estados Unidos. Nuestro trabajo es que tu solicitud esté bien preparada y que no pierdas tiempo ni dinero por errores.</p></details>
+    <details><summary>¿Qué necesito para empezar?</summary><p>Tu pasaporte vigente y, si la tuviste, tu visa anterior. También datos de tu viaje (fechas y dónde te hospedarás) y de tu trabajo o estudios.</p></details>
+    <details><summary>¿Qué pasa con mis datos?</summary><p>Los usamos solo para tu trámite y los eliminamos automáticamente 2 meses después de tu cita. Puedes leer el <a href="/privacidad">Aviso de Privacidad</a>.</p></details>
+    <details><summary>¿Puedo llenar el formulario en varios días?</summary><p>Sí. Todo se guarda solo; abre otra vez tu enlace y continúas donde te quedaste.</p></details>
+  </div></section>
+
+  <div class="band"><div class="wrap">
+    <h2>¿Listo para empezar?</h2>
+    <div class="cta">
+      <a class="btn btn-wa hidden" id="cta-wa2" target="_blank" rel="noopener" href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>Hablar con un asesor</a>
+    </div>
+    <p class="lead" id="no-wa" style="margin-top:14px">¿Ya tienes tu enlace? Ábrelo desde el mensaje que te mandó tu asesor.</p>
+  </div></div>
+</main>
+
+<footer><div class="wrap">
+  <p><b>Visapp</b> · <a href="/privacidad">Aviso de Privacidad</a> · <a href="/panel">Acceso asesor</a></p>
+  <p>Visapp es un servicio privado de asesoría y gestoría. No somos el Gobierno de los Estados Unidos ni el Departamento de Estado, y no garantizamos la aprobación de ninguna visa: la decisión corresponde exclusivamente a las autoridades consulares.</p>
+</div></footer>
+
 <script>
-(function () {
-  var DS = window.DS160;
-  var API = '/api/visa';
-  var token = '';
-  try { token = localStorage.getItem('visa_token') || ''; } catch (e) {}
-  var schema = null, current = null, currentData = null;
-
-  function $(id) { return document.getElementById(id); }
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function fmtDate(iso) { return iso ? new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''; }
-  function fmtSize(b) { return b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }
-  function linkFor(t) { return location.origin + '/s/' + t; }
-
-  function api(path, opts) {
-    opts = opts || {};
-    var headers = { 'Content-Type': 'application/json' };
-    if (token) headers['X-Auth-Token'] = token;
-    return fetch(API + path, { method: opts.method || 'GET', headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined })
-      .then(function (res) {
-        return res.json().catch(function () { return {}; }).then(function (d) {
-          if (!res.ok) { var e = new Error(d.error || 'Error de red'); e.status = res.status; throw e; }
-          return d;
-        });
-      });
-  }
-  var toastTimer;
-  function toast(text) {
-    var t = $('toast'); t.textContent = text; t.classList.add('show');
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
-  }
-  function copy(text, okMsg) {
-    var done = function () { toast(okMsg || 'Copiado'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () { fallback(); });
-    } else fallback();
-    function fallback() {
-      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) { toast('No se pudo copiar'); }
-      ta.remove();
-    }
-  }
-  function busy(btn, text, fn) {
-    var orig = btn.innerHTML; btn.disabled = true; btn.textContent = text;
-    return fn().then(function (v) { btn.disabled = false; btn.innerHTML = orig; return v; },
-      function (e) { btn.disabled = false; btn.innerHTML = orig; throw e; });
-  }
-  function waLink(name, url) {
-    var text = 'Hola ' + name + ', para tu trámite de visa necesito que llenes tu información en este enlace (se guarda sola y puedes continuar después): ' + url;
-    return 'https://wa.me/?text=' + encodeURIComponent(text);
-  }
-
-  // ── Auth ────────────────────────────────────────────────────────────────
-  function authMsg(t, err) { $('auth-msg').innerHTML = t ? '<div class="msg ' + (err ? 'err' : 'ok') + '">' + esc(t) + '</div>' : ''; }
-  function setToken(t) { token = t; try { localStorage.setItem('visa_token', t); } catch (e) {} }
-  function clearToken() { token = ''; try { localStorage.removeItem('visa_token'); } catch (e) {} }
-
-  $('login-form').addEventListener('submit', function (e) {
-    e.preventDefault(); authMsg('');
-    busy(e.target.querySelector('button[type=submit]'), 'Ingresando…', function () {
-      return api('/login', { method: 'POST', body: { email: $('login-email').value, password: $('login-password').value } });
-    }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
-  });
-  $('pw-eye').addEventListener('click', function () { var i = $('login-password'); i.type = i.type === 'password' ? 'text' : 'password'; });
-  $('to-setup').addEventListener('click', function () { $('setup-form').classList.toggle('hidden'); authMsg(''); });
-  $('setup-form').addEventListener('submit', function (e) {
-    e.preventDefault(); authMsg('');
-    busy(e.target.querySelector('button[type=submit]'), 'Creando…', function () {
-      return api('/register', { method: 'POST', body: { name: $('setup-name').value, email: $('setup-email').value, password: $('setup-password').value } });
-    }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
-  });
-  $('logout-btn').addEventListener('click', function () {
-    api('/logout', { method: 'POST' }).catch(function () {}).then(function () {
-      clearToken(); $('app-screen').classList.add('hidden'); $('auth-screen').classList.remove('hidden');
-    });
-  });
-
-  // ── Lista ───────────────────────────────────────────────────────────────
-  function statusOpt(v) { return (schema.statusOptions.filter(function (s) { return s.value === v; })[0]) || { label: v, tone: 'neutral' }; }
-  function linkBoxHtml(app) {
-    var url = linkFor(app.token);
-    return '<div class="link-box"><div class="lbl">Enlace para ' + esc(app.clientName) + '</div><div class="link-url">' + esc(url) + '</div>' +
-      '<div class="link-actions"><button class="btn btn-sm btn-primary" data-copy="' + esc(url) + '">Copiar enlace</button>' +
-      '<a class="btn btn-sm btn-wa" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="' + esc(waLink(app.clientName, url)) + '">Enviar por WhatsApp</a></div></div>';
-  }
-
-  $('new-btn').addEventListener('click', function () {
-    var name = $('new-name').value.trim();
-    if (!name) { $('new-msg').innerHTML = '<div class="msg err">Escribe el nombre del cliente</div>'; return; }
-    $('new-msg').innerHTML = '';
-    busy($('new-btn'), 'Creando…', function () {
-      return api('/admin/applications', { method: 'POST', body: { name: name, note: $('new-note').value } });
-    }).then(function (d) {
-      $('new-link').innerHTML = linkBoxHtml(d.application);
-      $('new-name').value = ''; $('new-note').value = '';
-      loadList();
-    }).catch(function (err) { $('new-msg').innerHTML = '<div class="msg err">' + esc(err.message) + '</div>'; });
-  });
-
-  var allApps = [];
-  function renderApps() {
-    var box = $('apps-list');
-    if (!allApps.length) {
-      box.innerHTML = '<div class="empty-state"><div class="empty-ill">' + FOLDER + '</div><h4>Aún no hay solicitudes</h4><p>Crea la primera solicitud y comienza a gestionar trámites.</p><button class="btn-outline-gold" id="first-btn" type="button">+ Crear primera solicitud</button></div>';
-      return;
-    }
-    var q = $('search-input').value.trim().toLowerCase(), f = $('filter-status').value;
-    var list = allApps.filter(function (a) {
-      return (!q || (a.clientName + ' ' + a.note).toLowerCase().indexOf(q) !== -1) && (!f || a.status.status === f);
-    });
-    if (!list.length) { box.innerHTML = '<div class="empty">Sin resultados con ese filtro.</div>'; return; }
-    box.innerHTML = list.map(function (a, i) {
-      var st = statusOpt(a.status.status);
-      return '<div class="client-card" data-open="' + a.id + '" style="animation-delay:' + (i * 35) + 'ms">' +
-        '<div class="client-top"><div><div class="client-name">' + esc(a.clientName) + '</div>' + (a.note ? '<div class="client-note">' + esc(a.note) + '</div>' : '') + '</div>' +
-        '<div class="pills">' + (a.submittedAt ? '<span class="pill sent">Enviado</span>' : '') +
-        '<span class="pill tone-' + st.tone + '">' + esc(st.label) + '</span><span class="pill">' + a.completion.pct + '%</span></div></div>' +
-        '<div class="bar"><i style="width:' + a.completion.pct + '%"></i></div>' +
-        '<div class="client-meta"><span>' + a.documentCount + ' doc(s)</span><span>·</span><span>' +
-        (a.updatedAt ? 'Última edición ' + fmtDate(a.updatedAt) : a.lastOpenedAt ? 'Abrió el enlace ' + fmtDate(a.lastOpenedAt) : 'Aún no abre el enlace') + '</span>' +
-        '<button class="btn btn-sm" style="margin-left:auto" data-copy="' + esc(linkFor(a.token)) + '">Copiar enlace</button></div></div>';
-    }).join('');
-  }
-  function loadList() {
-    return api('/admin/applications').then(function (d) { allApps = d.applications; renderApps(); });
-  }
-  var FOLDER = '<svg viewBox="0 0 24 24"><path d="M6 11V6a2 2 0 0 1 2-2h7l3 3v4"/><path d="M9 8h5M9 11h4"/><path d="M4 13h16l-1.4 7.5H5.4z"/><g transform="translate(8.6 13.6) scale(.5)" fill="#16213D" stroke="none"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" transform="rotate(90 12 12)"/></g></svg>';
-  $('search-btn').addEventListener('click', function () {
-    var t = $('list-tools'); t.classList.toggle('hidden'); $('search-btn').classList.toggle('on', !t.classList.contains('hidden'));
-    if (!t.classList.contains('hidden')) $('search-input').focus();
-  });
-  $('filter-btn').addEventListener('click', function () {
-    var t = $('list-tools'); t.classList.toggle('hidden'); $('filter-btn').classList.toggle('on', !t.classList.contains('hidden'));
-  });
-  $('search-input').addEventListener('input', renderApps);
-  $('filter-status').addEventListener('change', renderApps);
-  $('apps-list').addEventListener('click', function (e) {
-    if (e.target.id === 'first-btn') { $('new-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  });
-
-  // ── Navegación inferior ─────────────────────────────────────────────────
-  function showNav(name) {
-    $('list-area').classList.toggle('hidden', name !== 'apps');
-    $('settings-area').classList.toggle('hidden', name !== 'settings');
-    $('detail-area').classList.add('hidden');
-    Array.prototype.forEach.call(document.querySelectorAll('.bottom-nav button'), function (b) { b.classList.toggle('active', b.dataset.nav === name); });
-    window.scrollTo(0, 0);
-  }
-  Array.prototype.forEach.call(document.querySelectorAll('.bottom-nav button'), function (b) {
-    b.addEventListener('click', function () { showNav(b.dataset.nav); if (b.dataset.nav === 'apps') loadList(); });
-  });
-  $('logout-btn2').addEventListener('click', function () { $('logout-btn').click(); });
-  $('pwd-save').addEventListener('click', function () {
-    var cur = $('pwd-current'), neu = $('pwd-new'), msg = $('pwd-msg');
-    if (neu.value.length < 6) { msg.innerHTML = '<div class="msg err">La nueva contraseña debe tener al menos 6 caracteres</div>'; return; }
-    busy($('pwd-save'), 'Guardando…', function () {
-      return api('/password', { method: 'PUT', body: { currentPassword: cur.value, newPassword: neu.value } });
-    }).then(function () { cur.value = ''; neu.value = ''; msg.innerHTML = '<div class="msg ok">Contraseña actualizada</div>'; })
-      .catch(function (err) { msg.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>'; });
-  });
-
-  document.addEventListener('click', function (e) {
-    var c = e.target.closest ? e.target.closest('[data-copy]') : null;
-    if (c) { e.stopPropagation(); copy(c.dataset.copy, 'Enlace copiado'); return; }
-    var o = e.target.closest ? e.target.closest('[data-open]') : null;
-    if (o) openDetail(o.dataset.open);
-  });
-
-  // ── Detalle ─────────────────────────────────────────────────────────────
-  function answersHtml(data) {
-    return DS.present(schema.sections, data).map(function (s) {
-      function rows(list) {
-        return list.map(function (r) {
-          if (r.items) {
-            return '<div class="ans-list"><div class="ans-label">' + esc(r.label) + '</div>' +
-              (r.items.length ? r.items.map(function (it, i) {
-                return '<div class="ans-item"><div class="ans-item-hd">' + esc(r.itemLabel) + ' ' + (i + 1) + '</div>' + rows(it) + '</div>';
-              }).join('') : '<div class="ans-value empty-v" style="text-align:left">— sin respuesta —</div>') + '</div>';
-          }
-          var cls = r.empty ? (r.optional ? 'opt-v' : 'empty-v') : '';
-          return '<div class="ans-row"><div class="ans-label">' + esc(r.label) + '</div><div class="ans-value ' + cls + '"' +
-            (r.empty ? '' : ' data-val="' + esc(r.value) + '" title="Tocar para copiar"') + '>' + (r.empty ? (r.optional ? '—' : 'Sin responder') : esc(r.value)) + '</div></div>';
-        }).join('');
-      }
-      return '<div class="ans-section"><div class="ans-hd">' + esc(s.title) + '</div>' + rows(s.rows) + '</div>';
-    }).join('');
-  }
-  $('answers').addEventListener('click', function (e) {
-    var v = e.target.closest ? e.target.closest('.ans-value[data-val]') : null;
-    if (v) copy(v.dataset.val, 'Copiado');
-  });
-
-  function openDetail(id) {
-    api('/admin/applications/' + id).then(function (d) {
-      current = d.application; currentData = d.data;
-      $('list-area').classList.add('hidden'); $('settings-area').classList.add('hidden'); $('detail-area').classList.remove('hidden');
-      window.scrollTo(0, 0);
-      $('d-name').textContent = current.clientName;
-      $('d-sub').textContent = (current.note ? current.note + ' · ' : '') + current.completion.pct + '% completado' +
-        (current.submittedAt ? ' · enviado ' + fmtDate(current.submittedAt) : ' · aún no lo envía');
-      $('d-link').textContent = linkFor(current.token);
-      $('d-status').value = current.status.status;
-      $('d-status-note').value = current.status.note || '';
-      $('d-status-hint').textContent = current.status.updatedAt ? 'Última actualización: ' + fmtDate(current.status.updatedAt) : '';
-      $('answers').innerHTML = answersHtml(d.data);
-      $('d-docs').innerHTML = d.documents.length ? d.documents.map(function (x) {
-        var cat = schema.documentCategories.filter(function (c) { return c.value === x.category; })[0];
-        return '<div class="doc-row"><div>' + esc(x.originalName) + '<span>' + esc(cat ? cat.label : x.category) + ' · ' + fmtSize(x.size) + ' · ' + fmtDate(x.uploadedAt) + '</span></div>' +
-          '<button class="btn btn-sm" data-dl="' + x.id + '">Descargar</button></div>';
-      }).join('') : '<div class="empty">Sin documentos</div>';
-      var labels = { link_created: 'Solicitud creada', link_regenerated: 'Enlace regenerado', submitted: 'Formulario enviado', document_uploaded: 'Documento subido', document_deleted: 'Documento eliminado', status_changed: 'Estado actualizado' };
-      $('d-log').innerHTML = d.log.length ? d.log.map(function (l) {
-        return '<div class="log-item"><b>' + esc(labels[l.action] || l.action) + '</b>' + (l.detail ? ' — ' + esc(l.detail) : '') + '<time>' + fmtDate(l.ts) + '</time></div>';
-      }).join('') : '<div class="empty">Sin actividad</div>';
-    }).catch(function (err) { alert(err.message); });
-  }
-
-  $('back').addEventListener('click', function () { showNav('apps'); loadList(); });
-  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
-    b.addEventListener('click', function () {
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (x) { x.classList.remove('active'); });
-      Array.prototype.forEach.call(document.querySelectorAll('.view'), function (x) { x.classList.remove('active'); });
-      b.classList.add('active'); $(b.dataset.view).classList.add('active');
-    });
-  });
-  $('d-copy').addEventListener('click', function () { copy(linkFor(current.token), 'Enlace copiado'); });
-  $('d-wa').addEventListener('click', function () { window.open(waLink(current.clientName, linkFor(current.token)), '_blank', 'noopener'); });
-  $('d-regen').addEventListener('click', function () {
-    if (!confirm('El enlace actual dejará de funcionar. ¿Generar uno nuevo?')) return;
-    api('/admin/applications/' + current.id + '/regenerate-link', { method: 'POST' }).then(function () { openDetail(current.id); toast('Enlace nuevo generado'); })
-      .catch(function (err) { alert(err.message); });
-  });
-  $('d-status-save').addEventListener('click', function () {
-    busy($('d-status-save'), 'Guardando…', function () {
-      return api('/admin/applications/' + current.id + '/status', { method: 'PUT', body: { status: $('d-status').value, note: $('d-status-note').value } });
-    }).then(function () { openDetail(current.id); toast('Estado actualizado'); }).catch(function (err) { alert(err.message); });
-  });
-  $('copy-all').addEventListener('click', function () {
-    copy('SOLICITUD DS-160 — ' + current.clientName + '\n' + DS.toText(schema.sections, currentData), 'Todo copiado');
-  });
-  $('print-btn').addEventListener('click', function () { window.print(); });
-  $('d-delete').addEventListener('click', function () {
-    if (!confirm('¿Eliminar la solicitud de ' + current.clientName + ' con todas sus respuestas y documentos? No se puede deshacer.')) return;
-    api('/admin/applications/' + current.id, { method: 'DELETE' }).then(function () { $('back').click(); }).catch(function (err) { alert(err.message); });
-  });
-  $('d-docs').addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('[data-dl]') : null;
-    if (!b) return;
-    fetch(API + '/admin/applications/' + current.id + '/documents/' + b.dataset.dl + '/download', { headers: { 'X-Auth-Token': token } })
-      .then(function (res) {
-        if (!res.ok) throw new Error('No se pudo descargar');
-        return res.blob().then(function (blob) {
-          var cd = res.headers.get('Content-Disposition') || '';
-          var m = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/.exec(cd);
-          var a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = m ? decodeURIComponent(m[1] || m[2]) : 'documento';
-          document.body.appendChild(a); a.click(); a.remove();
-        });
-      }).catch(function (err) { alert(err.message); });
-  });
-
-  // ── Arranque ────────────────────────────────────────────────────────────
-  function hideLoader() { $('boot-loader').classList.add('hide'); }
-  function showAuth() { hideLoader(); $('app-screen').classList.add('hidden'); $('auth-screen').classList.remove('hidden'); }
-
-  function boot() {
-    if (!token) { showAuth(); return; }
-    Promise.all([schema ? Promise.resolve(schema) : api('/schema'), api('/me')]).then(function (r) {
-      schema = r[0];
-      $('who-name').textContent = r[1].user.name;
-      $('d-status').innerHTML = schema.statusOptions.map(function (s) { return '<option value="' + s.value + '">' + esc(s.label) + '</option>'; }).join('');
-      $('auth-screen').classList.add('hidden'); $('app-screen').classList.remove('hidden');
-      $('filter-status').innerHTML = '<option value="">Todos los estados</option>' + schema.statusOptions.map(function (x) { return '<option value="' + x.value + '">' + esc(x.label) + '</option>'; }).join('');
-      showNav('apps');
-      hideLoader();
-      return loadList();
-    }).catch(function (err) {
-      if (err && err.status === 401) clearToken();
-      showAuth();
-    });
-  }
-  boot();
-})();
+  fetch('/api/visa/public-config').then(function (r) { return r.json(); }).then(function (c) {
+    if (!c.whatsapp) return;
+    var href = 'https://wa.me/' + c.whatsapp + '?text=' + encodeURIComponent('Hola, quiero información sobre el trámite de mi visa.');
+    ['cta-wa', 'cta-wa2'].forEach(function (id) { var a = document.getElementById(id); a.href = href; a.classList.remove('hidden'); });
+  }).catch(function () {});
 </script>
 </body>
 </html>

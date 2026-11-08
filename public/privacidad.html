@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Aviso de Privacidad — Visapp</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F5F8FD; color: #16213D; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  header { background: #0E1A38; padding: calc(14px + env(safe-area-inset-top)) 20px 14px; }
+  header a { color: #EFE7D6; text-decoration: none; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 20px; display: inline-flex; align-items: center; gap: 10px; }
+  header img { width: 34px; height: 34px; } header span { color: #E3BB66; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 70px; }
+  h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(26px, 5vw, 34px); letter-spacing: -.02em; line-height: 1.15; }
+  .upd { color: #5C6B85; font-size: 13.5px; margin: 6px 0 22px; }
+  h2 { font-family: 'Montserrat', sans-serif; font-size: 18px; margin: 26px 0 8px; }
+  p, li { color: #2C3957; font-size: 15.5px; } p { margin-bottom: 10px; } ul { margin: 0 0 10px 22px; } li { margin-bottom: 4px; }
+  a { color: #7A5A16; font-weight: 600; }
+  .box { background: #fff; border: 1px solid rgba(22,33,61,.1); border-radius: 18px; padding: 20px 22px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header><a href="/"><img src="/logo.svg" alt=""><div>Visa<span>pp</span></div></a></header>
+<main>
+  <h1>Aviso de Privacidad</h1>
+  <div class="upd">Última actualización: noviembre de 2026</div>
+
+  <div class="box">
+    <h2 style="margin-top:0">1. Quién es el responsable</h2>
+    <p>El responsable del tratamiento de tus datos personales es <b id="advisor">el Ing. Luis Eduardo Rangel Llanes</b>, con domicilio en Querétaro, Querétaro, México, quien presta el servicio de asesoría y gestoría de trámites de visa a través de Visapp.</p>
+
+    <h2>2. Qué datos recabamos</h2>
+    <ul>
+      <li><b>Identificación y contacto:</b> nombre, fecha y lugar de nacimiento, nacionalidad, domicilio, teléfonos, correos y redes sociales.</li>
+      <li><b>Pasaporte y viajes:</b> número y fechas de tu pasaporte, historial de visas y viajes, datos de tu viaje a Estados Unidos y de tu contacto allá.</li>
+      <li><b>Familia, trabajo y estudios:</b> datos de tus padres y familiares, empleos y escuelas.</li>
+      <li><b>Datos sensibles:</b> respuestas sobre salud y antecedentes que el formulario DS-160 exige, así como imágenes o copias de tus documentos si decides subirlas.</li>
+    </ul>
+
+    <h2>3. Para qué los usamos</h2>
+    <ul>
+      <li>Llenar y revisar tu formulario DS-160 y gestionar tus citas de visa.</li>
+      <li>Contactarte por WhatsApp, teléfono o correo para dar seguimiento a tu trámite.</li>
+      <li>Llevar el control interno del servicio (estado del trámite, citas y cobros).</li>
+    </ul>
+    <p>No usamos tus datos para publicidad ni los vendemos.</p>
+
+    <h2>4. Con quién los compartimos</h2>
+    <p>No los transferimos a terceros, salvo lo necesario para el trámite que tú solicitas: la información que capturamos en el portal oficial del Gobierno de los Estados Unidos para tu solicitud. Para operar Visapp usamos proveedores de infraestructura (alojamiento del sitio y base de datos) que almacenan la información de forma segura y solo bajo nuestras instrucciones.</p>
+
+    <h2>5. Cuánto tiempo los conservamos</h2>
+    <p>Eliminamos de forma automática tus respuestas y documentos <b>2 meses después de tu última cita</b> (biométricos o entrevista). Después solo conservamos tu nombre, el estado del trámite y los registros de cobro, sin tus datos personales del formulario. Puedes pedir que se eliminen antes.</p>
+
+    <h2>6. Tus derechos (ARCO)</h2>
+    <p>Puedes <b>acceder, rectificar, cancelar u oponerte</b> al uso de tus datos, y revocar tu consentimiento, escribiendo a tu asesor por WhatsApp o al correo que te haya proporcionado, indicando tu nombre y lo que solicitas. Daremos respuesta en un plazo máximo de 20 días hábiles.</p>
+
+    <h2>7. Seguridad</h2>
+    <p>Tu enlace es personal y secreto: no lo compartas. Los datos viajan cifrados (HTTPS) y solo tu asesor puede consultarlos desde su panel protegido con contraseña.</p>
+
+    <h2>8. Cambios a este aviso</h2>
+    <p>Si este aviso cambia, publicaremos la versión actualizada en esta página.</p>
+  </div>
+
+</main>
+<script>
+  fetch('/api/visa/public-config').then(function (r) { return r.json(); }).then(function (c) {
+    if (c.advisorName) document.getElementById('advisor').textContent = c.advisorName;
+  }).catch(function () {});
+</script>
+</body>
+</html>

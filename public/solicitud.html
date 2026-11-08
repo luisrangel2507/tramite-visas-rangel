@@ -135,6 +135,24 @@
   .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
   .confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall 3.2s ease-in forwards; }
 
+  /* ── Ayuda, validaciones, WhatsApp, privacidad ── */
+  .where-btn { display: inline-block; margin-top: 8px; border: none; background: none; color: var(--gold-ink); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+  .where { margin-top: 8px; background: #F4F8FD; border: 1px solid rgba(60,100,170,.2); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; color: var(--navy); }
+  .where p { margin-top: 6px; } .where svg { width: 100%; height: auto; display: block; border-radius: 10px; }
+  .where .cap { font-size: 11.5px; color: var(--dim); margin-top: 4px; }
+  .vmsg { font-size: 13px; margin-top: 7px; line-height: 1.35; } .vmsg:empty { display: none; }
+  .vmsg.warn { color: #9A5A0C; } .vmsg.err { color: var(--red); font-weight: 500; }
+  .vmsg::before { content: '⚠️ '; }
+  .priv { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: var(--soft); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; margin: 0 0 16px; cursor: pointer; }
+  .priv input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--navy); flex-shrink: 0; }
+  .priv a { color: var(--gold-ink); font-weight: 600; }
+  .wa-fab { position: fixed; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 24; display: none; align-items: center; gap: 8px; background: #1FA855; color: #fff; text-decoration: none;
+    font-weight: 600; font-size: 14px; padding: 12px 16px; border-radius: 999px; box-shadow: 0 12px 24px -10px rgba(14,80,40,.7); }
+  .wa-fab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .warns { background: #FFF7E8; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+  .warns h3 { font-size: 14px; margin-bottom: 4px; } .warns li { list-style: none; font-size: 13px; color: var(--muted); padding: 4px 0; display: flex; justify-content: space-between; gap: 8px; }
+  .warns .goto { background: none; color: var(--gold-ink); padding: 0; text-decoration: underline; border-radius: 0; }
+
   /* ── Menú de secciones ── */
   .sheet-bg { position: fixed; inset: 0; background: rgba(14,23,41,.45); z-index: 40; }
   .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--bg); border-radius: 24px 24px 0 0; max-height: 80dvh; overflow: auto;
@@ -174,6 +192,7 @@
       <li><div class="pi">🔒</div><div><b>Es confidencial</b><small>Solo tu asesor ve lo que escribes.</small></div></li>
     </ul>
     <p class="tip" style="margin-bottom:18px">Ten a la mano tu <b>pasaporte</b> (y tu visa anterior, si tuviste).</p>
+    <label class="priv hidden" id="priv-row"><input type="checkbox" id="priv-check"><span>He leído y acepto el <a href="/privacidad" target="_blank" rel="noopener">Aviso de Privacidad</a>: autorizo que se usen mis datos para gestionar mi trámite de visa y que se eliminen 2 meses después de mi cita.</span></label>
     <button class="btn btn-primary" id="start-btn">Comenzar</button>
   </div>
 </div>
@@ -216,6 +235,7 @@
   </div>
 </div>
 
+<a class="wa-fab" id="wa-fab" target="_blank" rel="noopener" href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>¿Dudas? Escríbele a tu asesor</a>
 <div id="datalists"></div>
 <div id="confetti" class="confetti"></div>
 
@@ -242,7 +262,8 @@
   };
   var emoji = function (id) { return (FRIENDLY[id] || {}).e || '📝'; };
 
-  var schema = null, data = {}, docs = [], clientName = '', submittedAt = null;
+  var schema = null, data = {}, docs = [], clientName = '', submittedAt = null, advisor = { name: '', whatsapp: '' }, privacyAt = null;
+  var defs = {};
   var steps = [], stepIdx = 0;
   var dirty = {}, saveTimer = null, saving = false, queued = false;
 
@@ -317,7 +338,128 @@
       if (f.na) html += '<label class="na-row"><input type="checkbox" data-na="' + esc(key) + '"' + (isNA ? ' checked' : '') + '> ' + esc(f.na) + '</label>';
     }
     if (f.help) html += '<div class="help">' + esc(f.help) + '</div>';
+    defs[key] = f;
+    if (f.where) html += '<button type="button" class="where-btn" data-where="' + esc(key) + '">¿Dónde lo encuentro?</button><div class="where hidden" data-wp="' + esc(key) + '">' + whereHtml(f) + '</div>';
+    html += '<div class="vmsg" data-vm="' + esc(key) + '"></div>';
     return html + '</div>';
+  }
+
+  // ── Ayuda "¿Dónde lo encuentro?" ────────────────────────────────────────
+  var PP = { surnames: [95, 40, 193, 'Apellidos'], given: [95, 62, 193, 'Nombres'], nationality: [95, 84, 92, 'Nacionalidad'], sex: [192, 84, 40, 'Sexo'],
+    dob: [95, 106, 92, 'Fecha de nacimiento'], pob: [192, 106, 96, 'Lugar de nacimiento'], issued: [95, 128, 92, 'Fecha de expedición'], expires: [192, 128, 96, 'Fecha de vencimiento'],
+    authority: [95, 150, 193, 'Autoridad / lugar de expedición'], number: [200, 14, 88, 'N.º de pasaporte'] };
+  function passportSvg(hl) {
+    var g = Object.keys(PP).map(function (k) {
+      var r = PP[k], on = k === hl, h = k === 'number' ? 16 : 18;
+      return '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + h + '" rx="4" fill="' + (on ? 'rgba(227,187,102,.45)' : '#fff') + '" stroke="' + (on ? '#B8841F' : '#C9D2E3') + '" stroke-width="' + (on ? 2.2 : 1) + '"/>' +
+        '<text x="' + (r[0] + 5) + '" y="' + (r[1] + (h === 16 ? 11 : 12)) + '" font-size="7.5" fill="' + (on ? '#16213D' : '#7C879C') + '" font-weight="' + (on ? 700 : 400) + '">' + r[3] + '</text>';
+    }).join('');
+    return '<svg viewBox="0 0 300 190" role="img" aria-label="Esquema de la página de datos del pasaporte"><rect width="300" height="190" rx="10" fill="#EEF2F9"/>' +
+      '<rect x="12" y="22" width="72" height="92" rx="6" fill="#DDE4F0"/><circle cx="48" cy="56" r="14" fill="#B5C1D8"/><path d="M22 106c4-22 48-22 52 0z" fill="#B5C1D8"/>' + g +
+      '<rect x="12" y="174" width="276" height="5" rx="2" fill="#CBD3E3"/><rect x="12" y="182" width="276" height="5" rx="2" fill="#CBD3E3"/></svg>';
+  }
+  function whereHtml(f) {
+    return (f.where.hl ? passportSvg(f.where.hl) + '<div class="cap">Esquema de la página de datos de un pasaporte; el tuyo puede verse distinto.</div>' : '') + '<p>' + esc(f.where.text) + '</p>';
+  }
+
+  // ── Validaciones en vivo (avisos, nunca bloquean) ────────────────────────
+  var TYPOS = { 'gmial.com': 'gmail.com', 'gamil.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gmail.con': 'gmail.com', 'hotmial.com': 'hotmail.com', 'hotmai.com': 'hotmail.com', 'hotmail.con': 'hotmail.com', 'outlok.com': 'outlook.com', 'yahooo.com': 'yahoo.com', 'yaho.com': 'yahoo.com' };
+  var NAME_IDS = { apellidos: 1, nombres: 1, padreApellidos: 1, padreNombres: 1, madreApellidos: 1, madreNombres: 1, conyugeApellidos: 1, conyugeNombres: 1 };
+  function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+  function addMonths(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); }
+  function validate(f, v, scope) {
+    if (!v || v === DS.NA || typeof v !== 'string') return null;
+    var id = f.id, t = today();
+    if (f.type === 'email') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return { lvl: 'warn', text: 'Revisa el correo: debe verse como nombre@dominio.com' };
+      var dom = v.split('@')[1].toLowerCase();
+      if (TYPOS[dom]) return { lvl: 'warn', text: '¿Quisiste escribir ' + v.split('@')[0] + '@' + TYPOS[dom] + '?' };
+    }
+    if (f.type === 'tel') {
+      var dg = v.replace(/\D/g, '');
+      if (dg.length < 10) return { lvl: 'warn', text: 'Parece incompleto. Escribe los 10 dígitos con lada.' };
+      if (dg.length > 15) return { lvl: 'warn', text: 'Tiene demasiados dígitos; revísalo.' };
+    }
+    if (/(^cp$|Cp$)/.test(id) && !/^\d{5}(-\d{4})?$/.test(v.trim())) return { lvl: 'warn', text: 'El código postal lleva 5 dígitos.' };
+    if (NAME_IDS[id] && /\d/.test(v)) return { lvl: 'warn', text: 'Hay números en este campo; revísalo.' };
+    if (id === 'pasaporteNumero' && !/^[A-Za-z0-9]{6,12}$/.test(v.replace(/\s/g, ''))) return { lvl: 'warn', text: 'El número de pasaporte lleva de 6 a 12 letras o números, sin símbolos.' };
+    if (id === 'idNacional' && v.trim().length !== 18) return { lvl: 'warn', text: 'La CURP tiene 18 caracteres; revísala.' };
+    if (f.type === 'number' && parseFloat(v) <= 0) return { lvl: 'warn', text: 'Debe ser mayor que cero.' };
+    if (f.type === 'date') {
+      if (id === 'fechaNacimiento' || id === 'padreFechaNac' || id === 'madreFechaNac' || id === 'conyugeFechaNac') {
+        if (v > t) return { lvl: 'err', text: 'La fecha de nacimiento no puede ser futura.' };
+        if (v < addMonths(t, -1440)) return { lvl: 'err', text: 'Revisa el año: parece demasiado antiguo.' };
+      }
+      if (id === 'pasaporteExpedicion' && v > t) return { lvl: 'err', text: 'La fecha de expedición no puede ser futura.' };
+      if (id === 'pasaporteVencimiento') {
+        if (v < t) return { lvl: 'err', text: 'Tu pasaporte ya está vencido: habría que renovarlo antes de continuar el trámite.' };
+        if (scope.pasaporteExpedicion && v <= scope.pasaporteExpedicion) return { lvl: 'err', text: 'El vencimiento debe ser posterior a la expedición.' };
+        if (v < addMonths(t, 6)) return { lvl: 'warn', text: 'Vence en menos de 6 meses. Conviene que tenga vigencia suficiente después de tu viaje.' };
+      }
+      if ((id === 'fechaLlegada' || id === 'fechaLlegadaEstimada') && v < t) return { lvl: 'warn', text: 'Esa fecha ya pasó; revisa que sea la de tu viaje.' };
+      if (id === 'fechaSalida' && scope.fechaLlegada && v < scope.fechaLlegada) return { lvl: 'err', text: 'La salida no puede ser antes de la llegada.' };
+      if (id === 'hasta' && scope.desde && v < scope.desde) return { lvl: 'err', text: 'La fecha de término es anterior a la de inicio.' };
+    }
+    return null;
+  }
+  function scopeOf(key) { var parts = key.split('.'); parts.pop(); return parts.length ? getScopeByParts(parts) : data; }
+  function getScopeByParts(parts) { var v = data; parts.forEach(function (p) { v = v == null ? undefined : v[p]; }); return v || {}; }
+  function updateVMsgs() {
+    each('[data-vm]', function (el) {
+      var key = el.dataset.vm, f = defs[key];
+      var r = f ? validate(f, getAt(key), scopeOf(key)) : null;
+      el.className = 'vmsg' + (r ? ' ' + r.lvl : ''); el.textContent = r ? r.text : '';
+    });
+  }
+  function each(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
+  function collectIssues() {
+    var out = [];
+    function walk(fields, scope, ownerId) {
+      fields.forEach(function (f) {
+        if (!DS.isVisible(f, scope)) return;
+        if (f.type === 'list') { (Array.isArray(scope[f.id]) ? scope[f.id] : []).forEach(function (it) { walk(f.fields, it || {}, ownerId || f.id); }); return; }
+        var r = validate(f, scope[f.id], scope);
+        if (r) out.push({ label: f.label, text: r.text, lvl: r.lvl, owner: ownerId || f.id });
+      });
+    }
+    schema.sections.forEach(function (sec) { walk(sec.fields, data, null); });
+    return out;
+  }
+
+  // ── Autollenado por código postal (si hay conexión; si falla, se ignora) ──
+  var CP_TARGETS = { cp: ['mx', 'estado'], postalCp: ['mx', 'postalEstado'], empleadorCp: ['mx', 'empleadorEstado'], hospedajeCp: ['us', 'hospedajeEstado', 'hospedajeCiudad'], contactoCp: ['us', 'contactoEstado', 'contactoCiudad'] };
+  var USAB = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'Distrito de Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawái', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Luisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Misisipi', MO: 'Misuri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'Nueva Hampshire', NJ: 'Nueva Jersey', NM: 'Nuevo México', NY: 'Nueva York', NC: 'Carolina del Norte', ND: 'Dakota del Norte', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregón', PA: 'Pensilvania', RI: 'Rhode Island', SC: 'Carolina del Sur', SD: 'Dakota del Sur', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington', WV: 'Virginia Occidental', WI: 'Wisconsin', WY: 'Wyoming' };
+  function norm(x) { return String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function mxState(name) {
+    var n = norm(name);
+    if (n === 'distrito federal') return 'Ciudad de México';
+    if (n === 'mexico') return 'Estado de México';
+    var list = schema.datalists.estadosMx, i;
+    for (i = 0; i < list.length; i++) if (norm(list[i]) === n) return list[i];
+    for (i = 0; i < list.length; i++) if (norm(list[i]).indexOf(n) === 0 || n.indexOf(norm(list[i])) === 0) return list[i];
+    return '';
+  }
+  function fillIfEmpty(base, id, val) {
+    if (!val) return;
+    var key = base ? base + '.' + id : id;
+    if (getAt(key)) return;
+    setAt(key, val);
+    var el = document.querySelector('[data-path="' + key + '"]'); if (el) el.value = val;
+    afterValueChange(false);
+  }
+  function cpLookup(key) {
+    var parts = key.split('.'), id = parts.pop(), base = parts.join('.');
+    var t = CP_TARGETS[id]; if (!t) return;
+    var zip = String(getAt(key) || '').trim();
+    if (!/^\d{5}$/.test(zip) || !window.fetch) return;
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 4000);
+    fetch('https://api.zippopotam.us/' + t[0] + '/' + zip, ctl ? { signal: ctl.signal } : {}).then(function (r) { clearTimeout(timer); return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.places || !j.places[0]) return;
+      var pl = j.places[0];
+      if (t[0] === 'us') { fillIfEmpty(base, t[1], USAB[pl['state abbreviation']] || ''); fillIfEmpty(base, t[2], pl['place name']); }
+      else fillIfEmpty(base, t[1], mxState(pl.state));
+    }).catch(function () {});
   }
 
   function listHtml(f, scope, key) {
@@ -399,6 +541,7 @@
 
   function renderStep(keepScroll) {
     var s = steps[stepIdx], y = window.scrollY, html = '';
+    defs = {};
     var comp = renderHeader();
     var pageWord = s.section ? '' : '';
     if (s.section) {
@@ -415,6 +558,7 @@
       html += reviewHtml(comp, keepScroll);
     }
     $('step-body').innerHTML = html;
+    updateVMsgs();
     if (!keepScroll) {
       var c = s.section && s.page === 1 ? cheerFor(comp.pct) : null;
       $('cheer').innerHTML = c ? '<div class="cheer"><span class="em">' + c[0] + '</span><span>' + c[1] + '</span></div>' : '';
@@ -463,6 +607,13 @@
       });
     } else {
       html += '<div class="msg ok">🎉 ¡Todo completo! Solo falta tu confirmación.</div>';
+    }
+    var issues = collectIssues();
+    if (issues.length) {
+      html += '<div class="warns"><h3>⚠️ Revisa estos datos (' + issues.length + ')</h3><ul>' + issues.slice(0, 6).map(function (it) {
+        var idx = steps.findIndex(function (st) { return st.fields && st.fields.some(function (f) { return f.id === it.owner; }); });
+        return '<li><span>' + esc(it.label) + ': ' + esc(it.text) + '</span>' + (idx >= 0 ? '<button type="button" class="goto" data-step="' + idx + '">Ir</button>' : '') + '</li>';
+      }).join('') + (issues.length > 6 ? '<li>… y ' + (issues.length - 6) + ' más</li>' : '') + '</ul></div>';
     }
     html += '<label class="decl"><input type="checkbox" id="decl"' + (data.declaracion === 'si' ? ' checked' : '') + '>' +
       '<span>Declaro bajo protesta de decir verdad que toda la información proporcionada es verdadera y completa, y entiendo que declaraciones falsas pueden causar la negativa permanente de una visa.</span></label>' +
@@ -518,10 +669,12 @@
     if (!el.dataset || !el.dataset.path || el.dataset.select) return;
     setAt(el.dataset.path, el.value);
     afterValueChange(false);
+    updateVMsgs();
   });
   body.addEventListener('change', function (e) {
     var el = e.target;
     if (el.dataset && el.dataset.select) { setAt(el.dataset.path, el.value); afterValueChange(true); return; }
+    if (el.dataset && el.dataset.path && /(^cp$|Cp$|\.cp$)/.test(el.dataset.path)) cpLookup(el.dataset.path);
     if (el.dataset && el.dataset.na) {
       var key = el.dataset.na;
       setAt(key, el.checked ? DS.NA : '');
@@ -535,6 +688,7 @@
   body.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('button') : null;
     if (!el) return;
+    if (el.dataset.where) { var wp = body.querySelector('[data-wp="' + el.dataset.where + '"]'); if (wp) wp.classList.toggle('hidden'); return; }
     if (el.dataset.yn) { setAt(el.dataset.yn, el.dataset.v); afterValueChange(true); return; }
     if (el.dataset.add) {
       var arr = getAt(el.dataset.add); if (!Array.isArray(arr)) { arr = []; setAt(el.dataset.add, arr); }
@@ -645,7 +799,12 @@
     $('start-btn').textContent = submittedAt ? 'Revisar mis respuestas' : started ? 'Continuar donde me quedé' : 'Comenzar';
     $('boot').classList.add('hidden');
     $('welcome-screen').classList.remove('hidden');
+    var needsPrivacy = !privacyAt;
+    $('priv-row').classList.toggle('hidden', !needsPrivacy);
+    $('start-btn').disabled = needsPrivacy;
+    $('priv-check').onchange = function () { $('start-btn').disabled = !this.checked; };
     $('start-btn').onclick = function () {
+      if (needsPrivacy) { if (!$('priv-check').checked) return; http('POST', API + '/consent').catch(function () {}); privacyAt = new Date().toISOString(); }
       $('welcome-screen').classList.add('hidden');
       $('app').classList.remove('hidden');
       stepIdx = submittedAt ? 0 : started ? firstPendingStep() : 0;
@@ -656,13 +815,14 @@
   Promise.all([http('GET', '/api/visa/schema'), http('GET', API)]).then(function (r) {
     schema = r[0];
     var st = r[1];
-    clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt;
+    clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt; privacyAt = st.privacyAcceptedAt; advisor = st.advisor || advisor;
+    if (advisor.whatsapp) { var fab = $('wa-fab'); fab.href = 'https://wa.me/' + advisor.whatsapp + '?text=' + encodeURIComponent('Hola, soy ' + clientName + '. Tengo una duda con mi solicitud de visa.'); fab.style.display = 'inline-flex'; }
     $('datalists').innerHTML = datalistsHtml();
     buildSteps();
     ensureLists();
     showWelcome();
   }).catch(function (err) {
-    fail(err.status === 404 ? err.message : 'No pudimos cargar tu solicitud. Revisa tu conexión e intenta de nuevo.');
+    fail(err.status === 404 || err.status === 410 ? err.message : 'No pudimos cargar tu solicitud. Revisa tu conexión e intenta de nuevo.');
   });
 })();
 </script>
