@@ -1,4 +1,4 @@
-// Gestión de Trámite de Visas — API.
+// Visapp — API.
 //   · Cliente: entra con un enlace secreto (/s/<token>), sin cuenta ni contraseña.
 //   · Administrador (Ing. Rangel): inicia sesión, crea solicitudes/enlaces y ve las respuestas.
 // Almacenamiento en Postgres (Supabase u otro) vía DATABASE_URL.

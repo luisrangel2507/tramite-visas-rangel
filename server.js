@@ -28,4 +28,4 @@ app.use(express.static(PUBLIC));
 
 ensureSchema()
   .catch((err) => console.error('No se pudo verificar el esquema de la base de datos:', err.message))
-  .then(() => app.listen(PORT, () => console.log(`Trámite de Visas Rangel · puerto ${PORT}`)));
+  .then(() => app.listen(PORT, () => console.log(`Visapp · puerto ${PORT}`)));
