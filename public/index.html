@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Visapp — Panel</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -36,8 +37,8 @@
 
   .topbar { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; background: var(--navy-deep); box-shadow: 0 1px 0 rgba(217,177,92,.35);
     padding: calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 12px calc(18px + env(safe-area-inset-left)); }
-  .brand { display: flex; align-items: center; gap: 10px; color: #EFE7D6; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px; }
-  .brand-mark { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(155deg, var(--gold-soft), var(--gold)); color: var(--navy-deep); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #EFE7D6; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.3px; }
+  .brand-mark { width: 34px; height: 34px; display: block; }
   .brand span { color: var(--gold-soft); }
   .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #A9B2C6; }
   .wrap { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 22px 16px 80px; }
@@ -55,17 +56,54 @@
   .btn-sm { padding: 7px 12px; font-size: 12.5px; }
   .btn[disabled] { opacity: .5; cursor: default; }
 
-  .auth-card { max-width: 440px; margin: 8vh auto 0; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 28px; box-shadow: var(--shadow-md); text-align: center; animation: fadeUp .5s var(--ease); position: relative; z-index: 1; }
-  .auth-mark { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; background: linear-gradient(155deg, var(--navy), var(--navy-deep)); color: var(--gold-soft); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; }
-  .auth-title { font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; margin-bottom: 6px; }
-  .auth-title span { color: var(--gold-ink); }
-  .auth-sub { color: var(--muted); font-size: 13.5px; margin-bottom: 22px; }
+
+  /* ── LOGIN (escena de aeropuerto al atardecer) ── */
+  #auth-screen { position: fixed; inset: 0; z-index: 10; overflow: auto; background: linear-gradient(180deg, #4d6f9f 0%, #7f9cc4 15%, #e6b392 27%, #f3d5c3 33%, #e7ecf6 46%, #eef1f8 100%); }
+  .scene { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .scene .clouds { position: absolute; left: -10%; right: -10%; top: 14%; height: 130px; filter: blur(14px); opacity: .85;
+    background: radial-gradient(60px 26px at 12% 60%, #fff 0, transparent 70%), radial-gradient(90px 30px at 38% 40%, #fff 0, transparent 70%), radial-gradient(70px 24px at 62% 65%, #ffe9d6 0, transparent 70%), radial-gradient(80px 28px at 88% 45%, #fff 0, transparent 70%); }
+  .scene .wing { position: absolute; top: 0; right: 0; width: min(62vw, 340px); height: auto; }
+  .scene .trail { position: absolute; top: 4%; left: 0; width: min(46vw, 220px); height: auto; }
+  .scene .swoosh { position: absolute; left: 0; bottom: 0; width: min(70vw, 360px); height: auto; }
+  .scene .passport { position: absolute; right: -52px; bottom: -70px; width: 230px; height: 300px; transform: rotate(-17deg); border-radius: 18px;
+    background: linear-gradient(150deg, #1f3566, #0a1330); box-shadow: 0 30px 50px -20px rgba(10,19,48,.6); display: grid; place-items: center; align-content: center; gap: 16px; filter: blur(.6px); }
+  .scene .passport b { font-family: 'Montserrat', sans-serif; font-size: 15px; letter-spacing: .18em; color: #C9A24C; }
+  .scene .passport svg { width: 92px; height: 92px; fill: none; stroke: #C9A24C; stroke-width: 1.4; }
+  .auth-wrap { position: relative; min-height: 100%; display: flex; align-items: center; justify-content: center;
+    padding: max(150px, 22vh) 18px 120px; }
+  .auth-card { width: 100%; max-width: 430px; background: rgba(250,251,254,.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.8); border-radius: 30px; padding: 30px 26px 26px; text-align: center; box-shadow: 0 30px 60px -28px rgba(14,23,41,.5), 0 2px 8px rgba(14,23,41,.06); animation: fadeUp .5s var(--ease); }
+  .auth-logo { width: 82px; height: 82px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 10px 14px rgba(10,19,48,.3)); }
+  .wordmark { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 44px; letter-spacing: -1.5px; line-height: 1.1; color: #101C3F; }
+  .wordmark span { background: linear-gradient(180deg, #E3BB66, #B8841F); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tagline { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .34em; color: #5c6b85; margin: 4px 0 14px; padding-left: .34em; }
+  .auth-sub { color: var(--muted); font-size: 14.5px; margin-bottom: 20px; }
+  .afield { text-align: left; margin-bottom: 14px; }
+  .afield label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--navy); margin-bottom: 7px; }
+  .afield label svg, .btn-setup svg, .btn-login svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .afield input { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: #ECEFF7; border: 1px solid rgba(22,33,61,.1); border-radius: 16px; padding: 0 16px; height: 54px; outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
+  .afield input::placeholder { color: #7a869c; }
+  .afield input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-bg); background: #fff; }
+  .pw { position: relative; }
+  .pw input { padding-right: 50px; }
+  .pw button { position: absolute; right: 6px; top: 6px; width: 42px; height: 42px; border: none; background: none; color: #4a5875; cursor: pointer; border-radius: 12px; display: grid; place-items: center; }
+  .pw button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-login { width: 100%; height: 56px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px 0 26px; font: inherit; font-size: 18px; font-weight: 600; color: #fff;
+    border: none; border-radius: 18px; cursor: pointer; background: linear-gradient(100deg, #27407A, #0E1A3C); box-shadow: 0 14px 24px -12px rgba(14,26,60,.7); transition: transform .12s var(--ease); }
+  .btn-login span { flex: 1; text-align: center; padding-left: 19px; }
+  .btn-login:active { transform: scale(.98); }
+  .btn-login[disabled] { opacity: .6; }
+  .divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; color: #7a869c; }
+  .divider i { flex: 1; height: 1px; background: rgba(22,33,61,.14); }
+  .divider svg { width: 22px; height: 22px; fill: currentColor; transform: rotate(90deg); }
+  .btn-setup { width: 100%; height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-size: 14.5px; font-weight: 600; color: var(--navy); padding: 0 12px;
+    background: rgba(255,255,255,.7); border: 1.5px solid #C9A24C; border-radius: 16px; cursor: pointer; }
+  .btn-setup:hover { background: #fff; }
+  #setup-form { margin-top: 16px; text-align: left; }
   .field { margin-bottom: 14px; text-align: left; }
   .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
   .field input, .field select, .field textarea { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--panel-soft); border: 1px solid var(--border2); border-radius: 10px; padding: 11px 12px; outline: none; }
   .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-bg); }
-  .auth-switch { margin-top: 16px; font-size: 13.5px; }
-  .auth-switch a { cursor: pointer; font-weight: 600; }
   .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; text-align: left; }
   .msg.err { background: rgba(192,68,45,.08); color: var(--red); border: 1px solid rgba(192,68,45,.25); }
   .msg.ok { background: rgba(30,142,90,.08); color: var(--green); border: 1px solid rgba(30,142,90,.25); }
@@ -146,30 +184,45 @@
 
 <!-- ── LOGIN ── -->
 <div id="auth-screen" class="hidden">
-  <div class="auth-card">
-    <div class="auth-mark">V</div>
-    <div class="auth-title">Visa<span>pp</span></div>
-    <div class="auth-sub">Panel del Ing. Luis Eduardo Rangel Llanes</div>
-    <div id="auth-msg"></div>
-    <form id="login-form">
-      <div class="field"><label for="login-email">Correo electrónico</label><input type="email" id="login-email" required autocomplete="username"></div>
-      <div class="field"><label for="login-password">Contraseña</label><input type="password" id="login-password" required autocomplete="current-password"></div>
-      <button class="btn btn-primary" style="width:100%" type="submit">Ingresar</button>
-    </form>
-    <div class="auth-switch"><a id="to-setup">Configurar cuenta de administrador</a></div>
-    <form id="setup-form" class="hidden" style="margin-top:14px;text-align:left;border-top:1px solid var(--border);padding-top:16px">
-      <div class="field"><label for="setup-name">Nombre completo</label><input type="text" id="setup-name" required></div>
-      <div class="field"><label for="setup-email">Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
-      <div class="field"><label for="setup-password">Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
-      <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta de administrador</button>
-    </form>
+  <div class="scene" aria-hidden="true">
+    <div class="clouds"></div>
+    <svg class="trail" viewBox="0 0 220 110"><path d="M2 100C40 60 90 40 150 54 175 60 190 52 200 40" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/><g transform="translate(176 8) scale(1.7) rotate(60 12 12)" fill="#fff" fill-opacity=".92"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
+    <svg class="wing" viewBox="0 0 340 250"><defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E4A7C"/><stop offset=".6" stop-color="#6F8DB8"/><stop offset="1" stop-color="#B9C7DC"/></linearGradient></defs>
+      <path d="M60 0H340V190L150 150C110 140 80 112 70 70Z" fill="url(#wg)"/><path d="M60 0L70 70C80 112 110 140 150 150L340 190V175L170 130C120 112 95 70 90 0Z" fill="#fff" fill-opacity=".18"/><path d="M60 0C62 40 70 60 100 78" fill="none" stroke="#0E1A3C" stroke-opacity=".35" stroke-width="3"/></svg>
+    <svg class="swoosh" viewBox="0 0 360 130"><path d="M0 50C110 70 230 100 360 130H0Z" fill="#0E1A3C"/><path d="M0 40C110 62 230 94 360 126" fill="none" stroke="#C9A24C" stroke-width="3"/></svg>
+    <div class="passport"><b>PASAPORTE</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><ellipse cx="50" cy="50" rx="18" ry="40"/><path d="M10 50h80M16 30h68M16 70h68"/></svg></div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <img class="auth-logo" src="/logo.svg" alt="">
+      <div class="wordmark">Visa<span>pp</span></div>
+      <div class="tagline">GESTIÓN DE VISAS</div>
+      <div class="auth-sub">Panel del Ing. Luis Eduardo Rangel Llanes</div>
+      <div id="auth-msg"></div>
+      <form id="login-form">
+        <div class="afield"><label for="login-email"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5 12 13l8.5-5.5"/></svg>Correo electrónico</label>
+          <input type="email" id="login-email" required autocomplete="username" placeholder="Ingresa tu correo electrónico"></div>
+        <div class="afield"><label for="login-password"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Contraseña</label>
+          <div class="pw"><input type="password" id="login-password" required autocomplete="current-password" placeholder="Ingresa tu contraseña">
+          <button type="button" id="pw-eye" aria-label="Mostrar u ocultar contraseña"><svg viewBox="0 0 24 24"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+        <button class="btn-login" type="submit"><span>Ingresar</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <div class="divider"><i></i><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg><i></i></div>
+      <button type="button" class="btn-setup" id="to-setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configurar cuenta de administrador</button>
+      <form id="setup-form" class="hidden">
+        <div class="field"><label for="setup-name">Nombre completo</label><input type="text" id="setup-name" required></div>
+        <div class="field"><label for="setup-email">Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
+        <div class="field"><label for="setup-password">Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
+        <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta de administrador</button>
+      </form>
+    </div>
   </div>
 </div>
 
 <!-- ── APP ── -->
 <div id="app-screen" class="hidden">
   <div class="topbar">
-    <div class="brand"><div class="brand-mark">V</div><div>Visa<span>pp</span></div></div>
+    <div class="brand"><img class="brand-mark" src="/logo.svg" alt=""><div>Visa<span>pp</span></div></div>
     <div class="who"><span id="who-name"></span><button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button></div>
   </div>
 
@@ -287,9 +340,9 @@
     }
   }
   function busy(btn, text, fn) {
-    var orig = btn.textContent; btn.disabled = true; btn.textContent = text;
-    return fn().then(function (v) { btn.disabled = false; btn.textContent = orig; return v; },
-      function (e) { btn.disabled = false; btn.textContent = orig; throw e; });
+    var orig = btn.innerHTML; btn.disabled = true; btn.textContent = text;
+    return fn().then(function (v) { btn.disabled = false; btn.innerHTML = orig; return v; },
+      function (e) { btn.disabled = false; btn.innerHTML = orig; throw e; });
   }
   function waLink(name, url) {
     var text = 'Hola ' + name + ', para tu trámite de visa necesito que llenes tu información en este enlace (se guarda sola y puedes continuar después): ' + url;
@@ -303,14 +356,15 @@
 
   $('login-form').addEventListener('submit', function (e) {
     e.preventDefault(); authMsg('');
-    busy(e.target.querySelector('button'), 'Ingresando…', function () {
+    busy(e.target.querySelector('button[type=submit]'), 'Ingresando…', function () {
       return api('/login', { method: 'POST', body: { email: $('login-email').value, password: $('login-password').value } });
     }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
   });
+  $('pw-eye').addEventListener('click', function () { var i = $('login-password'); i.type = i.type === 'password' ? 'text' : 'password'; });
   $('to-setup').addEventListener('click', function () { $('setup-form').classList.toggle('hidden'); authMsg(''); });
   $('setup-form').addEventListener('submit', function (e) {
     e.preventDefault(); authMsg('');
-    busy(e.target.querySelector('button'), 'Creando…', function () {
+    busy(e.target.querySelector('button[type=submit]'), 'Creando…', function () {
       return api('/register', { method: 'POST', body: { name: $('setup-name').value, email: $('setup-email').value, password: $('setup-password').value } });
     }).then(function (d) { setToken(d.token); boot(); }).catch(function (err) { authMsg(err.message, true); });
   });
