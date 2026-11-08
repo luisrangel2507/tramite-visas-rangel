@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0E1A38">
+<title>Entrar a mi solicitud — Visapp</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --navy: #16213D; --gold: #B8841F; --muted: #5C6B85; --red: #C0442D; }
+  body { font-family: 'Inter', sans-serif; color: var(--navy); min-height: 100dvh; -webkit-font-smoothing: antialiased;
+    background: #0E1A38 url('/hero-passport.jpg') center bottom / cover no-repeat; position: relative; }
+  body::before { content: ''; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(14,26,56,.55) 0%, rgba(14,26,56,.35) 40%, rgba(14,26,56,.8) 100%); }
+  .wrap { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: calc(24px + env(safe-area-inset-top)) 18px 40px; }
+  .card { width: 100%; max-width: 420px; background: rgba(250,251,254,.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 28px; padding: 28px 24px 24px; text-align: center; box-shadow: 0 30px 60px -28px rgba(0,0,0,.6); }
+  .logo { width: 70px; height: 70px; display: block; margin: 0 auto 4px; filter: drop-shadow(0 10px 14px rgba(10,19,48,.3)); }
+  .wm { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1.2px; color: #101C3F; line-height: 1.1; } .wm span { background: linear-gradient(180deg, #E3BB66, #B8841F); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h1 { font-family: 'Montserrat', sans-serif; font-size: 20px; margin: 10px 0 4px; }
+  p.sub { color: var(--muted); font-size: 14.5px; margin-bottom: 18px; }
+  form { text-align: left; }
+  label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+  input { width: 100%; font: inherit; font-size: 16px; height: 54px; border-radius: 16px; border: 1px solid rgba(22,33,61,.12); background: #ECEFF7; padding: 0 16px; outline: none; }
+  input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(184,132,31,.14); background: #fff; }
+  .pw { position: relative; } .pw input { padding-right: 54px; }
+  .pw button { position: absolute; right: 6px; top: 7px; width: 40px; height: 40px; border: none; background: none; font-size: 18px; cursor: pointer; border-radius: 10px; }
+  .go { width: 100%; height: 56px; margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; font: inherit; font-size: 17px; font-weight: 600; color: #fff; border: none; border-radius: 18px; cursor: pointer;
+    background: linear-gradient(100deg, #27407A, #0E1A3C); box-shadow: 0 14px 24px -12px rgba(14,26,60,.7); }
+  .go[disabled] { opacity: .6; }
+  .msg { font-size: 14px; padding: 11px 13px; border-radius: 12px; margin-top: 12px; background: rgba(192,68,45,.09); color: var(--red); }
+  .help { color: var(--muted); font-size: 13px; margin-top: 16px; text-align: center; } .help a { color: #7A5A16; font-weight: 600; }
+  :focus-visible { outline: 3px solid rgba(184,132,31,.55); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <img class="logo" src="/logo.svg" alt="">
+    <div class="wm">Visa<span>pp</span></div>
+    <h1>Entra a tu solicitud</h1>
+    <p class="sub">Usa el usuario y la contraseña que te dio tu asesor.</p>
+    <form id="f">
+      <label for="u">Usuario</label>
+      <input id="u" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="Ej. maria.lopez42">
+      <label for="p">Contraseña</label>
+      <div class="pw"><input id="p" type="password" autocomplete="current-password" required placeholder="Tu contraseña"><button type="button" id="eye" aria-label="Mostrar u ocultar contraseña">👁</button></div>
+      <div id="msg" role="alert"></div>
+      <button class="go" type="submit">Entrar →</button>
+    </form>
+    <p class="help">¿No tienes acceso? Pídeselo a tu asesor por WhatsApp.<br><a href="/">← Volver al inicio</a></p>
+  </div>
+</div>
+<script>
+  var f = document.getElementById('f'), msg = document.getElementById('msg');
+  document.getElementById('eye').addEventListener('click', function () { var i = document.getElementById('p'); i.type = i.type === 'password' ? 'text' : 'password'; });
+  f.addEventListener('submit', function (e) {
+    e.preventDefault(); msg.innerHTML = '';
+    var btn = f.querySelector('.go'); btn.disabled = true; btn.textContent = 'Entrando…';
+    fetch('/api/visa/client/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'No se pudo entrar'); return d; }); })
+      .then(function (d) {
+        try { localStorage.setItem('visa_cs_' + d.linkToken, d.session); } catch (er) {}
+        location.href = '/s/' + d.linkToken;
+      })
+      .catch(function (err) { var m = document.createElement('div'); m.className = 'msg'; m.textContent = err.message; msg.appendChild(m); btn.disabled = false; btn.textContent = 'Entrar →'; });
+  });
+</script>
+</body>
+</html>

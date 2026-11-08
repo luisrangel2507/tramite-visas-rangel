@@ -153,6 +153,17 @@
   .warns h3 { font-size: 14px; margin-bottom: 4px; } .warns li { list-style: none; font-size: 13px; color: var(--muted); padding: 4px 0; display: flex; justify-content: space-between; gap: 8px; }
   .warns .goto { background: none; color: var(--gold-ink); padding: 0; text-decoration: underline; border-radius: 0; }
 
+  /* ── Contraseña ── */
+  .gate-form { text-align: left; margin-top: 6px; }
+  .gate-form label { display: block; font-size: 13.5px; font-weight: 600; margin: 12px 0 6px; }
+  .gate-form input { width: 100%; font: inherit; font-size: 16px; height: 52px; border-radius: 14px; border: 1.5px solid var(--border2); background: #FDFBF6; padding: 0 14px; outline: none; }
+  .gate-form input[readonly] { background: #EFEADD; color: var(--muted); }
+  .gate-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-bg); background: #fff; }
+  .pwrap { position: relative; } .pwrap input { padding-right: 52px; }
+  .pwrap button { position: absolute; right: 6px; top: 6px; width: 40px; height: 40px; border: none; background: none; font-size: 18px; cursor: pointer; border-radius: 10px; }
+  .gate-form .btn { width: 100%; margin-top: 16px; }
+  .logout-link { display: block; width: 100%; margin-top: 8px; padding: 12px; border: none; background: none; color: var(--red); font: inherit; font-weight: 600; cursor: pointer; }
+
   /* ── Menú de secciones ── */
   .sheet-bg { position: fixed; inset: 0; background: rgba(14,23,41,.45); z-index: 40; }
   .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--bg); border-radius: 24px 24px 0 0; max-height: 80dvh; overflow: auto;
@@ -175,6 +186,25 @@
     <div class="hero">🔗</div>
     <h1>Este enlace no está disponible</h1>
     <p class="lead" id="error-text"></p>
+  </div>
+</div>
+
+<!-- Contraseña -->
+<div id="gate-screen" class="center hidden">
+  <div class="brandline"><img src="/logo.svg" alt="" style="width:46px;height:46px;display:block;margin:0 auto 6px"><b>Visapp</b></div>
+  <div class="card">
+    <div class="hero">🔐</div>
+    <h1 id="g-title">Hola</h1>
+    <p class="lead">Escribe tu contraseña para continuar con tu solicitud.</p>
+    <form class="gate-form" id="gate-form">
+      <label for="g-user">Usuario</label>
+      <input type="text" id="g-user" readonly autocomplete="username">
+      <label for="g-pass">Contraseña</label>
+      <div class="pwrap"><input type="password" id="g-pass" required autocomplete="current-password" placeholder="La que te dio tu asesor"><button type="button" id="g-eye" aria-label="Mostrar u ocultar contraseña">👁</button></div>
+      <div id="g-msg" style="margin-top:12px"></div>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+    </form>
+    <p class="tip" style="margin:16px 0 0">¿No la tienes o no te funciona? Pídele a tu asesor que te la envíe de nuevo.</p>
   </div>
 </div>
 
@@ -231,7 +261,7 @@
 
   <div id="sheet-wrap" class="hidden">
     <div class="sheet-bg" id="sheet-bg"></div>
-    <div class="sheet" role="dialog" aria-label="Secciones"><h2>Ir a una sección</h2><div id="steps"></div></div>
+    <div class="sheet" role="dialog" aria-label="Secciones"><h2>Ir a una sección</h2><div id="steps"></div><button type="button" class="logout-link" id="logout-btn">Cerrar sesión</button></div>
   </div>
 </div>
 
@@ -262,6 +292,8 @@
   };
   var emoji = function (id) { return (FRIENDLY[id] || {}).e || '📝'; };
 
+  var SKEY = 'visa_cs_' + token, session = '', username = '';
+  try { session = localStorage.getItem(SKEY) || ''; } catch (e) {}
   var schema = null, data = {}, docs = [], clientName = '', submittedAt = null, advisor = { name: '', whatsapp: '' }, privacyAt = null;
   var defs = {};
   var steps = [], stepIdx = 0;
@@ -277,6 +309,7 @@
 
   function http(method, url, body, isForm) {
     var opts = { method: method, headers: {} };
+    if (session) opts.headers['X-Client-Session'] = session;
     if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
     if (isForm) opts.body = body;
     return fetch(url, opts).then(function (res) {
@@ -641,8 +674,9 @@
       saving = false;
       if (Object.keys(dirty).length || queued) { queued = false; return flush(); }
       setSaveState('· Guardado ✓');
-    }).catch(function () {
+    }).catch(function (err) {
       saving = false;
+      if (err && err.status === 401) { clearSession(); showGate(); return; }
       keys.forEach(function (k) { dirty[k] = true; });
       setSaveState('· Sin conexión, reintentando…', true);
       clearTimeout(saveTimer); saveTimer = setTimeout(flush, 4000);
@@ -653,7 +687,7 @@
     var keys = Object.keys(dirty);
     if (!keys.length || !window.fetch) return;
     var patch = {}; keys.forEach(function (k) { patch[k] = data[k]; });
-    try { fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patch: patch }), keepalive: true }); } catch (e) {}
+    try { fetch(API, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Client-Session': session }, body: JSON.stringify({ patch: patch }), keepalive: true }); } catch (e) {}
   });
 
   // ── Eventos ─────────────────────────────────────────────────────────────
@@ -812,15 +846,50 @@
     };
   }
 
-  Promise.all([http('GET', '/api/visa/schema'), http('GET', API)]).then(function (r) {
-    schema = r[0];
-    var st = r[1];
-    clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt; privacyAt = st.privacyAcceptedAt; advisor = st.advisor || advisor;
-    if (advisor.whatsapp) { var fab = $('wa-fab'); fab.href = 'https://wa.me/' + advisor.whatsapp + '?text=' + encodeURIComponent('Hola, soy ' + clientName + '. Tengo una duda con mi solicitud de visa.'); fab.style.display = 'inline-flex'; }
-    $('datalists').innerHTML = datalistsHtml();
-    buildSteps();
-    ensureLists();
-    showWelcome();
+  function load() {
+    return Promise.all([http('GET', '/api/visa/schema'), http('GET', API)]).then(function (r) {
+      schema = r[0];
+      var st = r[1];
+      clientName = st.clientName; data = st.data || {}; docs = st.documents || []; submittedAt = st.submittedAt; privacyAt = st.privacyAcceptedAt; advisor = st.advisor || advisor;
+      if (advisor.whatsapp) { var fab = $('wa-fab'); fab.href = 'https://wa.me/' + advisor.whatsapp + '?text=' + encodeURIComponent('Hola, soy ' + clientName + '. Tengo una duda con mi solicitud de visa.'); fab.style.display = 'inline-flex'; }
+      $('datalists').innerHTML = datalistsHtml();
+      buildSteps();
+      ensureLists();
+      $('gate-screen').classList.add('hidden');
+      showWelcome();
+    });
+  }
+  function clearSession() { session = ''; try { localStorage.removeItem(SKEY); } catch (e) {} }
+  function showGate() {
+    $('boot').classList.add('hidden'); $('welcome-screen').classList.add('hidden'); $('app').classList.add('hidden');
+    $('g-title').textContent = '¡Hola, ' + clientName.split(' ')[0] + '!';
+    $('g-user').value = username; $('g-pass').value = '';
+    $('gate-screen').classList.remove('hidden');
+    setTimeout(function () { $('g-pass').focus(); }, 50);
+  }
+  $('g-eye').addEventListener('click', function () { var i = $('g-pass'); i.type = i.type === 'password' ? 'text' : 'password'; });
+  $('gate-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = e.target.querySelector('button[type=submit]'), orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Entrando…'; $('g-msg').innerHTML = '';
+    http('POST', API + '/login', { password: $('g-pass').value }).then(function (d) {
+      session = d.session; try { localStorage.setItem(SKEY, session); } catch (er) {}
+      $('gate-screen').classList.add('hidden'); $('boot').classList.remove('hidden');
+      return load();
+    }).catch(function (err) {
+      $('boot').classList.add('hidden'); $('gate-screen').classList.remove('hidden');
+      $('g-msg').innerHTML = '<div class="msg err">' + esc(err.message) + '</div>';
+    }).then(function () { btn.disabled = false; btn.textContent = orig; });
+  });
+  $('logout-btn').addEventListener('click', function () {
+    http('POST', API + '/logout').catch(function () {}).then(function () { clearSession(); location.href = '/'; });
+  });
+
+  http('GET', API + '/hello').then(function (h) {
+    clientName = h.clientName; username = h.username;
+    if (!h.hasAccess) return fail('Tu asesor aún no ha creado tu usuario y contraseña. Pídeselos para poder entrar.');
+    if (!session) return showGate();
+    return load().catch(function (err) { if (err.status === 401) { clearSession(); return showGate(); } throw err; });
   }).catch(function (err) {
     fail(err.status === 404 || err.status === 410 ? err.message : 'No pudimos cargar tu solicitud. Revisa tu conexión e intenta de nuevo.');
   });

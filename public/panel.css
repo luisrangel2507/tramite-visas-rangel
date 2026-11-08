@@ -296,3 +296,12 @@
 .list-head { flex-wrap: wrap; gap: 10px; }
 .list-head h3 { white-space: nowrap; }
 .head-actions { margin-left: auto; }
+
+/* ── Acceso del cliente ── */
+.cred-box { background: #F4F8FD; border: 1px solid rgba(60,100,170,.22); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.cred-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.cred-row span { width: 86px; font-size: 12.5px; color: var(--muted); }
+.cred-row b { flex: 1; font-family: ui-monospace, Menlo, monospace; font-size: 17px; letter-spacing: .02em; word-break: break-all; }
+.lbl-sm { font-size: 12px; font-weight: 600; color: var(--muted); margin: 4px 0 6px; }
+.cred-row span { width: 100%; }
+.cred-row b { font-size: 16px; word-break: normal; overflow-wrap: anywhere; flex: 1 1 140px; }

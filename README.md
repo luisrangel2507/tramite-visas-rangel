@@ -6,13 +6,14 @@
 |---|---|
 | `/` | Página pública (servicios, cómo funciona, preguntas frecuentes, botón de WhatsApp) |
 | `/panel` | Panel del asesor (instalable como app en el celular) |
-| `/s/<enlace>` | Formulario DS-160 del cliente (enlace secreto, sin cuenta ni contraseña) |
+| `/entrar` | Acceso de clientes con **usuario y contraseña** |
+| `/s/<enlace>` | Formulario DS-160 del cliente (el enlace personal también pide la contraseña) |
 | `/privacidad` | Aviso de Privacidad |
 
 ## Cómo funciona
 
-1. Entras a `/panel`, creas una **solicitud** con el nombre del cliente y mandas su **enlace** por WhatsApp.
-2. El cliente acepta el aviso de privacidad y llena el formulario DS-160 completo, de 5 en 5 preguntas.
+1. Entras a `/panel` y creas una **solicitud** con el nombre del cliente. La app genera su **usuario** (p. ej. `maria.lopez48`) y una **contraseña**, y te arma el mensaje de WhatsApp con enlace, usuario y contraseña. La contraseña solo se muestra al crearla; si se pierde, la restableces (eso cierra la sesión anterior del cliente).
+2. El cliente entra en `/entrar` (o abriendo su enlace) con su usuario y contraseña, acepta el aviso de privacidad y llena el formulario DS-160 completo, de 5 en 5 preguntas.
    Se guarda solo, avisa si un dato parece mal (pasaporte vencido, teléfono incompleto…) y trae
    ayuda “¿Dónde lo encuentro?” y un botón de WhatsApp para dudas.
 3. Cuando envía, te aparece un aviso en el panel (y por correo si lo configuras).
@@ -31,6 +32,12 @@
   contacto en EE. UU. (y opcionalmente datos de los padres).
 - **Clientes:** quién debe y cuánto. **Reportes:** solicitudes por mes, ingresos, embudo por estado.
 - **Configuración:** tu WhatsApp, correo para avisos, contraseña e instalación de la app.
+
+## Acceso de clientes
+
+- Usuario y contraseña por solicitud; las contraseñas se guardan cifradas (scrypt), nunca en texto.
+- Tras 8 intentos fallidos se bloquea el acceso 15 minutos. La sesión dura 30 días en el celular del cliente.
+- Las solicitudes creadas con la versión anterior (solo enlace) no tienen contraseña: abre la solicitud en el panel y pulsa **Restablecer contraseña** para generarla.
 
 ## Privacidad: borrado automático
 

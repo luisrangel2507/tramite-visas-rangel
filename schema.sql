@@ -101,3 +101,18 @@ create table if not exists settings (
   value jsonb not null default '{}'::jsonb
 );
 alter table settings enable row level security;
+
+-- ── Acceso de clientes con usuario y contraseña ──
+alter table applications add column if not exists username text;
+alter table applications add column if not exists pass_salt text;
+alter table applications add column if not exists pass_hash text;
+alter table applications add column if not exists pass_changed_at timestamptz;
+create unique index if not exists applications_username_idx on applications (lower(username)) where username is not null;
+
+create table if not exists client_sessions (
+  token text primary key,
+  application_id text not null references applications(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists client_sessions_app_idx on client_sessions(application_id);
+alter table client_sessions enable row level security;

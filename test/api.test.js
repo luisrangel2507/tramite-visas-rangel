@@ -22,6 +22,8 @@ async function call(method, path, body, headers = {}) {
   return { status: res.status, json };
 }
 const admin = (m, p, b) => call(m, p, b, { 'x-auth-token': tok });
+let sess = '';
+const cl = (m, p, b) => call(m, p, b, { 'x-client-session': sess });
 
 test.before(async () => {
   await ensureSchema();
@@ -50,13 +52,28 @@ test('flujo completo: crear, llenar, consentir, enviar, avisar, cobrar, familia,
   const c = await admin('POST', '/admin/applications', { name: 'Ana Prueba', note: 'wa' });
   const id = c.json.application.id, link = c.json.application.token;
 
+  // acceso: usuario y contraseña generados; el enlace solo NO da acceso
+  const cred = c.json.credentials;
+  assert.match(cred.username, /^ana\.[a-z]+\d{2,}$|^ana\d{2,}$/);
+  assert.strictEqual(cred.password.length, 8);
+  assert.strictEqual((await call('GET', '/s/' + link)).status, 401, 'sin sesión no se ve nada');
+  assert.strictEqual((await call('GET', '/s/' + link + '/hello')).json.clientName, 'Ana Prueba');
+  assert.strictEqual((await call('POST', '/s/' + link + '/login', { password: 'mala' })).status, 401);
+  assert.strictEqual((await call('POST', '/client/login', { username: cred.username, password: 'mala' })).status, 401);
+  const lg = await call('POST', '/client/login', { username: cred.username.toUpperCase(), password: cred.password });
+  assert.strictEqual(lg.status, 200, 'el usuario no distingue mayúsculas');
+  assert.strictEqual(lg.json.linkToken, link);
+  const lg2 = await call('POST', '/s/' + link + '/login', { password: cred.password });
+  assert.strictEqual(lg2.status, 200);
+  sess = lg2.json.session;
+
   // consentimiento y datos del asesor visibles al cliente
   await admin('PUT', '/admin/settings', { whatsapp: '+52 442 123 4567', notifyEmail: 'luis@x.com', advisorName: 'Luis' });
-  let open = await call('GET', '/s/' + link);
+  let open = await cl('GET', '/s/' + link);
   assert.strictEqual(open.json.advisor.whatsapp, '524421234567');
   assert.strictEqual(open.json.privacyAcceptedAt, null);
-  assert.strictEqual((await call('POST', '/s/' + link + '/consent')).status, 200);
-  open = await call('GET', '/s/' + link);
+  assert.strictEqual((await cl('POST', '/s/' + link + '/consent')).status, 200);
+  open = await cl('GET', '/s/' + link);
   assert.ok(open.json.privacyAcceptedAt);
   assert.strictEqual((await call('GET', '/public-config')).json.whatsapp, '524421234567');
 
@@ -69,8 +86,8 @@ test('flujo completo: crear, llenar, consentir, enviar, avisar, cobrar, familia,
   }); };
   SECTIONS.forEach((s) => fill(s.fields, data));
   data.declaracion = 'si';
-  assert.strictEqual((await call('PUT', '/s/' + link, { patch: data })).status, 200);
-  const sub = await call('POST', '/s/' + link + '/submit');
+  assert.strictEqual((await cl('PUT', '/s/' + link, { patch: data })).status, 200);
+  const sub = await cl('POST', '/s/' + link + '/submit');
   assert.strictEqual(sub.status, 200, JSON.stringify(sub.json));
 
   // aviso en el panel (no leído) y luego "visto"
@@ -95,9 +112,18 @@ test('flujo completo: crear, llenar, consentir, enviar, avisar, cobrar, familia,
   const cap = await admin('PUT', `/admin/applications/${id}/capture`, { capture: { personal: true, nada: true } });
   assert.deepStrictEqual(cap.json.capture, { personal: true });
 
+  // restablecer contraseña cierra las sesiones anteriores
+  const reset = await admin('POST', `/admin/applications/${id}/credentials`);
+  assert.strictEqual(reset.json.credentials.username, cred.username, 'el usuario se conserva');
+  assert.notStrictEqual(reset.json.credentials.password, cred.password);
+  assert.strictEqual((await cl('GET', '/s/' + link)).status, 401);
+  assert.strictEqual((await call('POST', '/client/login', { username: cred.username, password: cred.password })).status, 401);
+  sess = (await call('POST', '/client/login', { username: cred.username, password: reset.json.credentials.password })).json.session;
+
   // familia: copia solo lo elegido
   const dup = await admin('POST', `/admin/applications/${id}/duplicate`, { name: 'Pedro Prueba', copy: ['domicilio', 'contactoEEUU'] });
   assert.strictEqual(dup.status, 200);
+  assert.ok(dup.json.credentials.username && dup.json.credentials.password, 'cada integrante tiene su acceso');
   const det = await admin('GET', `/admin/applications/${dup.json.application.id}`);
   assert.strictEqual(det.json.data.calle, 'X');
   assert.ok(!('hospedajeCalle' in det.json.data));
@@ -111,7 +137,8 @@ test('flujo completo: crear, llenar, consentir, enviar, avisar, cobrar, familia,
 
   // depuración 2 meses después de la cita
   assert.strictEqual(await visa.purgeExpired(), 2, 'Ana y Pedro comparten las fechas de la cita');
-  assert.strictEqual((await call('GET', '/s/' + link)).status, 410);
+  assert.strictEqual((await call('POST', '/client/login', { username: cred.username, password: reset.json.credentials.password })).status, 401, 'la depuración cierra el acceso');
+  assert.strictEqual((await cl('GET', '/s/' + link)).status, 410);
   const after = await admin('GET', `/admin/applications/${id}`);
   assert.deepStrictEqual(after.json.data, {});
   assert.strictEqual(after.json.documents.length, 0);
@@ -120,10 +147,21 @@ test('flujo completo: crear, llenar, consentir, enviar, avisar, cobrar, familia,
   assert.strictEqual(await visa.purgeExpired(), 0, 'no se repite');
 });
 
+test('bloqueo tras demasiados intentos fallidos', async () => {
+  const c = await admin('POST', '/admin/applications', { name: 'Bruno Bloqueo' });
+  const u = c.json.credentials.username;
+  let last;
+  for (let i = 0; i < 9; i++) last = await call('POST', '/client/login', { username: u, password: 'x' + i });
+  assert.strictEqual(last.status, 429);
+  const right = await call('POST', '/client/login', { username: u, password: c.json.credentials.password });
+  assert.strictEqual(right.status, 429, 'ni la contraseña correcta entra mientras dure el bloqueo');
+});
+
 test('enlace inválido o regenerado deja de funcionar', async () => {
   const c = await admin('POST', '/admin/applications', { name: 'Zed' });
   const old = c.json.application.token;
-  assert.strictEqual((await call('GET', '/s/' + old)).status, 200);
+  const l = await call('POST', '/client/login', { username: c.json.credentials.username, password: c.json.credentials.password });
+  assert.strictEqual((await call('GET', '/s/' + old, null, { 'x-client-session': l.json.session })).status, 200);
   await admin('POST', `/admin/applications/${c.json.application.id}/regenerate-link`);
   assert.strictEqual((await call('GET', '/s/' + old)).status, 404);
   assert.strictEqual((await call('GET', '/s/nope')).status, 404);

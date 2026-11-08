@@ -105,12 +105,25 @@
   function reminderText(a, url) {
     return 'Hola ' + a.clientName.split(' ')[0] + ', vas en ' + a.completion.pct + '% de tu solicitud de visa. Continúa donde te quedaste (se guarda sola): ' + url;
   }
-  function linkBoxHtml(app) {
+  var freshCreds = {};   // contraseñas recién generadas (solo en memoria, para poder copiarlas)
+  function accessText(name, url, cred, showPass) {
+    return 'Hola ' + name.split(' ')[0] + ', para tu trámite de visa entra a Visapp y llena tu información (se guarda sola y puedes continuar después):\n' +
+      'Enlace: ' + url + '\nUsuario: ' + cred.username + '\n' + (showPass ? 'Contraseña: ' + cred.password : '(tu contraseña te la mandé antes)');
+  }
+  function credBoxHtml(app, cred) {
     var url = linkFor(app.token);
-    return '<div class="link-box"><div class="lbl">Enlace para ' + esc(app.clientName) + '</div><div class="link-url">' + esc(url) + '</div>' +
-      '<div class="link-actions"><button class="btn btn-sm btn-primary" data-copy="' + esc(url) + '">Copiar enlace</button>' +
-      '<a class="btn btn-sm btn-wa" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="' +
-      esc(waLink('Hola ' + app.clientName.split(' ')[0] + ', para tu trámite de visa necesito que llenes tu información en este enlace (se guarda sola y puedes continuar después): ' + url)) + '">Enviar por WhatsApp</a></div></div>';
+    return '<div class="cred-box"><div class="cred-row"><span>Usuario</span><b>' + esc(cred.username) + '</b><button class="btn btn-sm" data-copy="' + esc(cred.username) + '" data-copy-msg="Usuario copiado">Copiar</button></div>' +
+      '<div class="cred-row"><span>Contraseña</span><b>' + esc(cred.password) + '</b><button class="btn btn-sm" data-copy="' + esc(cred.password) + '" data-copy-msg="Contraseña copiada">Copiar</button></div>' +
+      '<div class="link-actions"><button class="btn btn-sm btn-primary" data-copy="' + esc(accessText(app.clientName, url, cred, true)) + '" data-copy-msg="Mensaje copiado">Copiar mensaje completo</button>' +
+      '<a class="btn btn-sm btn-wa" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="' + esc(waLink(accessText(app.clientName, url, cred, true))) + '">Enviar por WhatsApp</a></div>' +
+      '<div class="hint">⚠️ Guarda o envía la contraseña ahora: por seguridad no se vuelve a mostrar (si se pierde, la restableces).</div></div>';
+  }
+  function linkBoxHtml(app, cred) {
+    var url = linkFor(app.token);
+    freshCreds[app.id] = cred;
+    return '<div class="link-box"><div class="lbl">Acceso creado para ' + esc(app.clientName) + '</div>' + credBoxHtml(app, cred) +
+      '<div class="lbl" style="margin-top:12px">Enlace personal</div><div class="link-url">' + esc(url) + '</div>' +
+      '<div class="link-actions"><button class="btn btn-sm" data-copy="' + esc(url) + '">Copiar solo el enlace</button></div></div>';
   }
   onClick('new-btn', function () {
     var name = $('new-name').value.trim();
@@ -119,7 +132,7 @@
     busy($('new-btn'), 'Creando…', function () {
       return api('/admin/applications', { method: 'POST', body: { name: name, note: $('new-note').value } });
     }).then(function (d) {
-      $('new-link').innerHTML = linkBoxHtml(d.application);
+      $('new-link').innerHTML = linkBoxHtml(d.application, d.credentials);
       $('new-name').value = ''; $('new-note').value = '';
       refreshAll();
     }).catch(function (err) { msg('new-msg', err.message); });
@@ -211,7 +224,7 @@
 
   document.addEventListener('click', function (e) {
     var c = e.target.closest ? e.target.closest('[data-copy]') : null;
-    if (c) { e.stopPropagation(); copy(c.dataset.copy, 'Enlace copiado'); return; }
+    if (c) { e.stopPropagation(); copy(c.dataset.copy, c.dataset.copyMsg || 'Enlace copiado'); return; }
     var o = e.target.closest ? e.target.closest('[data-open]') : null;
     if (o) openDetail(o.dataset.open);
   });
@@ -363,6 +376,7 @@
     $('d-purged').classList.toggle('hidden', !purged);
     $('d-purged').textContent = purged ? 'Por privacidad, las respuestas y documentos de este trámite se eliminaron el ' + fmtDate(a.purgedAt) + ' (2 meses después de la cita). Se conservan el nombre, el estado y los cobros.' : '';
     $('d-link').textContent = linkFor(a.token);
+    paintCred();
     pill('d-privacy', d.privacyAcceptedAt ? 'Privacidad aceptada' : 'Sin aceptar privacidad', d.privacyAcceptedAt ? 'good' : 'warn');
 
     // estado
@@ -448,11 +462,29 @@
     });
   });
 
+  // Acceso (usuario y contraseña)
+  function paintCred() {
+    var a = current.application, c = freshCreds[a.id];
+    if (!a.hasAccess) { $('d-cred').innerHTML = '<div class="msg err">Este cliente aún no tiene usuario y contraseña. Pulsa “Restablecer contraseña” para generarlos.</div>'; return; }
+    $('d-cred').innerHTML = c ? credBoxHtml(a, c) :
+      '<div class="cred-box"><div class="cred-row"><span>Usuario</span><b>' + esc(a.username) + '</b><button class="btn btn-sm" data-copy="' + esc(a.username) + '" data-copy-msg="Usuario copiado">Copiar</button></div>' +
+      '<div class="cred-row"><span>Contraseña</span><b>••••••••</b><span class="hint" style="margin:0">solo se ve al crearla o restablecerla</span></div></div>';
+  }
+  onClick('d-reset', function () {
+    var a = current.application;
+    if (a.hasAccess && !confirm('Se generará una contraseña nueva y se cerrará la sesión actual de ' + a.clientName + '. ¿Continuar?')) return;
+    busy($('d-reset'), 'Generando…', function () { return api('/admin/applications/' + a.id + '/credentials', { method: 'POST' }); })
+      .then(function (r) { freshCreds[a.id] = r.credentials; current.application.username = r.credentials.username; current.application.hasAccess = true; paintCred(); openAcc('link', true); toast('Contraseña nueva generada'); })
+      .catch(function (err) { alert(err.message); });
+  });
+
   // Enlace
   onClick('d-copy', function () { copy(linkFor(current.application.token), 'Enlace copiado'); });
   onClick('d-wa', function () {
     var a = current.application;
-    window.open(waLink('Hola ' + a.clientName.split(' ')[0] + ', para tu trámite de visa necesito que llenes tu información en este enlace (se guarda sola y puedes continuar después): ' + linkFor(a.token)), '_blank', 'noopener');
+    var c = freshCreds[a.id];
+    window.open(waLink(a.hasAccess ? accessText(a.clientName, linkFor(a.token), c || { username: a.username }, !!c)
+      : 'Hola ' + a.clientName.split(' ')[0] + ', abre este enlace para llenar tu solicitud de visa: ' + linkFor(a.token)), '_blank', 'noopener');
   });
   onClick('d-remind', function () { var a = current.application; window.open(waLink(reminderText(a, linkFor(a.token))), '_blank', 'noopener'); });
   onClick('d-regen', function () {
@@ -562,7 +594,7 @@
     if (!name) { msg('fam-msg', 'Escribe el nombre del nuevo integrante'); return; }
     var copyIds = []; each('[data-fcopy]', function (c) { if (c.checked) copyIds.push(c.dataset.fcopy); });
     busy($('fam-add'), 'Creando…', function () { return api('/admin/applications/' + current.application.id + '/duplicate', { method: 'POST', body: { name: name, copy: copyIds } }); })
-      .then(function (r) { $('fam-name').value = ''; refreshAll(); return openDetail(r.application.id).then(function () { openAcc('link', true); toast('Solicitud creada: copia su enlace aquí arriba'); }); })
+      .then(function (r) { freshCreds[r.application.id] = r.credentials; $('fam-name').value = ''; refreshAll(); return openDetail(r.application.id).then(function () { openAcc('link', true); toast('Solicitud creada: copia su enlace aquí arriba'); }); })
       .catch(function (err) { msg('fam-msg', err.message); });
   });
 

@@ -96,8 +96,9 @@ async function purgeExpired(pool, now = new Date()) {
     if (!isPurgeDue(r.appointment, now)) continue;
     const entry = JSON.stringify([{ ts: now.toISOString(), action: 'purged', detail: 'Datos y documentos eliminados (2 meses después de la cita)' }]);
     await pool.query('delete from application_documents where application_id = $1', [r.id]);
+    await pool.query('delete from client_sessions where application_id = $1', [r.id]);
     await pool.query(
-      `update applications set data = '{}'::jsonb, capture = '{}'::jsonb, purged_at = now(),
+      `update applications set data = '{}'::jsonb, capture = '{}'::jsonb, purged_at = now(), pass_hash = null, pass_salt = null,
          log = coalesce(log, '[]'::jsonb) || $2::jsonb where id = $1`,
       [r.id, entry]
     );
