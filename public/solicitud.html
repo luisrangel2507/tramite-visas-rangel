@@ -50,6 +50,7 @@
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 22px 18px; box-shadow: var(--shadow-sm); animation: fadeUp .35s var(--ease); }
   .card h1 { font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600; letter-spacing: -.3px; margin-bottom: 4px; }
   .card .intro { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+  .page-ind { font-size: 12px; font-weight: 600; color: var(--gold-ink); letter-spacing: .03em; margin-bottom: 10px; }
   .welcome { background: var(--gold-bg); border: 1px solid rgba(168,121,31,.3); border-radius: 14px; padding: 14px 16px; font-size: 13.5px; margin-bottom: 14px; color: var(--navy); }
   .welcome b { font-family: 'Fraunces', serif; font-size: 16px; display: block; margin-bottom: 4px; }
 
@@ -166,6 +167,7 @@
   var API = '/api/visa/s/' + encodeURIComponent(token);
 
   var schema = null, data = {}, docs = [], clientName = '', submittedAt = null;
+  var PAGE_SIZE = 5;
   var steps = [], stepIdx = 0;
   var dirty = {}, saveTimer = null, saving = false, queued = false;
   var lastComp = null;
@@ -285,18 +287,37 @@
 
   // ── Pasos ───────────────────────────────────────────────────────────────
   function buildSteps() {
-    steps = schema.sections.map(function (s) { return { id: s.id, title: s.title, section: s }; });
+    // Páginas de 5 preguntas. Una "pregunta" es un campo sin condición más los campos
+    // que dependen de ella (aparecen justo después), así las páginas no se mueven al responder.
+    steps = [];
+    schema.sections.forEach(function (s) {
+      var blocks = [];
+      s.fields.forEach(function (f) {
+        if (!f.showIf || !blocks.length) blocks.push([f]); else blocks[blocks.length - 1].push(f);
+      });
+      var pages = [];
+      for (var i = 0; i < blocks.length; i += PAGE_SIZE) {
+        pages.push([].concat.apply([], blocks.slice(i, i + PAGE_SIZE)));
+      }
+      pages.forEach(function (fields, n) {
+        steps.push({ id: s.id, title: s.title, section: s, fields: fields, page: n + 1, pages: pages.length,
+          from: n * PAGE_SIZE + 1, to: Math.min((n + 1) * PAGE_SIZE, blocks.length), count: blocks.length });
+      });
+    });
     steps.push({ id: 'docs', title: 'Documentos' });
     steps.push({ id: 'review', title: 'Revisar y enviar' });
   }
 
   function renderChips() {
     var comp = lastComp = DS.completion(schema.sections, data);
+    var seen = {};
     $('steps').innerHTML = steps.map(function (s, i) {
+      if (seen[s.id]) return '';       // un chip por sección (lleva a su primera página)
+      seen[s.id] = true;
       var done = false;
       if (s.section) { var b = comp.bySection[s.id]; done = b && b.total > 0 && b.filled === b.total; }
       if (s.id === 'review') done = !!submittedAt;
-      return '<button type="button" class="step-chip' + (i === stepIdx ? ' active' : '') + (done ? ' done' : '') + '" data-step="' + i + '">' +
+      return '<button type="button" class="step-chip' + (steps[stepIdx].id === s.id ? ' active' : '') + (done ? ' done' : '') + '" data-step="' + i + '">' +
         '<span class="tick">✓</span>' + esc(s.title) + '</button>';
     }).join('');
     $('progress-fill').style.width = comp.pct + '%';
@@ -313,8 +334,9 @@
         html += '<div class="welcome"><b>Hola, ' + esc(clientName) + '</b>Llena esta información con calma y tal como aparece en tus documentos. Se guarda sola mientras escribes; puedes cerrar la página y continuar después con este mismo enlace.</div>';
       }
       html += '<div class="card"><h1>' + esc(s.section.title) + '</h1>' +
-        (s.section.intro ? '<p class="intro">' + esc(s.section.intro) + '</p>' : '<div style="height:12px"></div>') +
-        s.section.fields.map(function (f) { return fieldHtml(f, data, ''); }).join('') + '</div>';
+        '<div class="page-ind">Preguntas ' + s.from + '–' + s.to + ' de ' + s.count + ' · Parte ' + s.page + ' de ' + s.pages + '</div>' +
+        (s.page === 1 && s.section.intro ? '<p class="intro">' + esc(s.section.intro) + '</p>' : '<div style="height:8px"></div>') +
+        s.fields.map(function (f) { return fieldHtml(f, data, ''); }).join('') + '</div>';
     } else if (s.id === 'docs') {
       html += docsHtml();
     } else {
