@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E1A38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Visapp">
+<title>Visapp — Panel</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/panel.css">
+</head>
+<body>
+<div id="boot-loader"><div class="loader-ring"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<!-- ── LOGIN ── -->
+<div id="auth-screen" class="hidden">
+  <div class="scene" aria-hidden="true">
+    <div class="clouds"></div>
+    <svg class="trail" viewBox="0 0 220 110"><path d="M2 100C40 60 90 40 150 54 175 60 190 52 200 40" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/><g transform="translate(176 8) scale(1.7) rotate(60 12 12)" fill="#fff" fill-opacity=".92"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
+    <svg class="wing" viewBox="0 0 340 250"><defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E4A7C"/><stop offset=".6" stop-color="#6F8DB8"/><stop offset="1" stop-color="#B9C7DC"/></linearGradient></defs>
+      <path d="M60 0H340V190L150 150C110 140 80 112 70 70Z" fill="url(#wg)"/><path d="M60 0L70 70C80 112 110 140 150 150L340 190V175L170 130C120 112 95 70 90 0Z" fill="#fff" fill-opacity=".18"/><path d="M60 0C62 40 70 60 100 78" fill="none" stroke="#0E1A3C" stroke-opacity=".35" stroke-width="3"/></svg>
+    <svg class="swoosh" viewBox="0 0 360 130"><path d="M0 50C110 70 230 100 360 130H0Z" fill="#0E1A3C"/><path d="M0 40C110 62 230 94 360 126" fill="none" stroke="#C9A24C" stroke-width="3"/></svg>
+    <div class="passport"><b>PASAPORTE</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><ellipse cx="50" cy="50" rx="18" ry="40"/><path d="M10 50h80M16 30h68M16 70h68"/></svg></div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <img class="auth-logo" src="/logo.svg" alt="">
+      <div class="wordmark">Visa<span>pp</span></div>
+      <div class="tagline">GESTIÓN DE VISAS</div>
+      <div class="auth-sub">Panel del Ing. Luis Eduardo Rangel Llanes</div>
+      <div id="auth-msg"></div>
+      <form id="login-form">
+        <div class="afield"><label for="login-email"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5 12 13l8.5-5.5"/></svg>Correo electrónico</label>
+          <input type="email" id="login-email" required autocomplete="username" placeholder="Ingresa tu correo electrónico"></div>
+        <div class="afield"><label for="login-password"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Contraseña</label>
+          <div class="pw"><input type="password" id="login-password" required autocomplete="current-password" placeholder="Ingresa tu contraseña">
+          <button type="button" id="pw-eye" aria-label="Mostrar u ocultar contraseña"><svg viewBox="0 0 24 24"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+        <button class="btn-login" type="submit"><span>Ingresar</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <button type="button" class="btn-setup" id="to-setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configurar cuenta de administrador</button>
+      <form id="setup-form" class="hidden">
+        <div class="field"><label for="setup-name">Nombre completo</label><input type="text" id="setup-name" required></div>
+        <div class="field"><label for="setup-email">Correo del administrador</label><input type="email" id="setup-email" required autocomplete="username"></div>
+        <div class="field"><label for="setup-password">Contraseña (mínimo 6 caracteres)</label><input type="password" id="setup-password" required minlength="6" autocomplete="new-password"></div>
+        <button class="btn btn-primary" style="width:100%" type="submit">Crear cuenta de administrador</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app-screen" class="hidden">
+  <div class="topbar">
+    <div class="brand"><img class="brand-mark" src="/logo.svg" alt=""><div>Visa<span>pp</span></div></div>
+    <i class="vsep"></i>
+    <div class="who"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span id="who-name"></span></div>
+    <button class="logout" id="logout-btn" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M16 8l4 4-4 4M20 12H9"/></svg></button>
+  </div>
+
+  <div class="wrap">
+    <!-- ═ Solicitudes ═ -->
+    <div id="list-area">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">GESTIÓN DE VISAS</div>
+          <h2 class="title">Solicitudes</h2>
+          <div class="sub">Crea una solicitud, envía el enlace a tu cliente y revisa aquí el estatus de cada trámite.</div>
+        </div>
+        <svg class="globe" viewBox="0 0 170 150" aria-hidden="true"><defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f9cc8"/><stop offset="1" stop-color="#cbd8ec"/></linearGradient></defs>
+          <g fill="none" stroke="url(#gl)" stroke-width="2.2"><circle cx="85" cy="78" r="58"/><ellipse cx="85" cy="78" rx="26" ry="58"/><path d="M27 78h116M36 50h98M36 106h98"/></g>
+          <path d="M16 122C60 120 112 92 142 40" fill="none" stroke="#E3BB66" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+          <g transform="translate(130 6) scale(1.9) rotate(45 12 12)" fill="#7f95b8"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
+      </div>
+
+      <div id="today-card" class="card today hidden"></div>
+
+      <div class="card newcard">
+        <div class="card-title"><svg viewBox="0 0 24 24"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><path d="M13 3v5h5v3"/><path d="M13 3l5 5"/><circle cx="18" cy="18" r="4.2"/><path d="M18 16v4M16 18h4"/></svg> Nueva solicitud</div>
+        <div class="afield"><label for="new-name"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg> Nombre del cliente <b class="req">*</b></label><input type="text" id="new-name" autocomplete="off" placeholder="Ej. Juan Pérez"></div>
+        <div class="afield"><label for="new-note"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h4"/></svg> Nota interna (opcional)</label><input type="text" id="new-note" autocomplete="off" placeholder="Ej. WhatsApp 442…, seguimiento, etc."></div>
+        <button class="btn-create" id="new-btn" type="button"><svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 3 3 7z"/><path d="M21 3 10 13.5"/></svg><span>Crear enlace</span><em class="go" style="font-style:normal"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></em></button>
+        <div id="new-msg" style="margin-top:12px"></div>
+        <div id="new-link"></div>
+      </div>
+
+      <div class="list-head"><h3>Mis solicitudes</h3>
+        <div class="head-actions">
+          <div class="seg" role="group" aria-label="Vista"><button type="button" id="view-list" class="on">Lista</button><button type="button" id="view-board">Tablero</button></div>
+          <button class="icon-btn" id="search-btn" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+          <button class="icon-btn" id="filter-btn" type="button" aria-label="Filtrar por estado"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+        </div></div>
+      <div id="list-tools" class="hidden">
+        <input type="search" id="search-input" placeholder="Buscar por nombre…" autocomplete="off">
+        <select id="filter-status" aria-label="Estado"></select>
+      </div>
+      <div id="apps-list"></div>
+      <div id="board" class="board hidden"></div>
+    </div>
+
+    <!-- ═ Clientes (cobranza) ═ -->
+    <div id="clients-area" class="hidden">
+      <div class="hero"><div><div class="eyebrow">CUENTAS</div><h2 class="title">Clientes</h2><div class="sub">Quién ya pagó, quién debe y cuánto.</div></div></div>
+      <div class="kpis" id="clients-kpis"></div>
+      <div class="chips" id="clients-chips"><button class="chip on" data-cf="all">Todos</button><button class="chip" data-cf="due">Con saldo</button><button class="chip" data-cf="paid">Liquidados</button></div>
+      <div id="clients-list"></div>
+    </div>
+
+    <!-- ═ Reportes ═ -->
+    <div id="reports-area" class="hidden">
+      <div class="hero"><div><div class="eyebrow">NEGOCIO</div><h2 class="title">Reportes</h2><div class="sub">Cómo va tu operación en los últimos meses.</div></div></div>
+      <div id="reports-body"></div>
+    </div>
+
+    <!-- ═ Configuración ═ -->
+    <div id="settings-area" class="hidden">
+      <div class="hero"><div><div class="eyebrow">TU CUENTA</div><h2 class="title">Configuración</h2><div class="sub">Datos de contacto, avisos y seguridad.</div></div></div>
+      <div class="card newcard">
+        <div class="card-title">Datos del asesor</div>
+        <div class="afield"><label for="set-name">Nombre que verá el cliente</label><input type="text" id="set-name" maxlength="100"></div>
+        <div class="afield"><label for="set-wa">WhatsApp (con lada, p. ej. 52 442 123 4567)</label><input type="tel" id="set-wa" inputmode="tel" placeholder="52 442 123 4567"></div>
+        <div class="afield"><label for="set-mail">Correo para avisos de formularios enviados</label><input type="email" id="set-mail" placeholder="tucorreo@gmail.com"><div class="hint" id="mail-hint"></div></div>
+        <button class="btn-login" id="set-save" type="button"><span style="padding-left:0">Guardar</span></button>
+        <div id="set-msg" style="margin-top:12px"></div>
+      </div>
+      <div class="card" id="install-card"><div class="card-title" style="margin-bottom:8px">Instalar Visapp en tu celular</div>
+        <p class="hint" id="install-text">Ábrela desde el navegador y agrégala a tu pantalla de inicio para usarla como app.</p>
+        <button class="btn btn-primary hidden" id="install-btn" type="button">Instalar app</button></div>
+      <div class="card newcard">
+        <div class="card-title">Cambiar contraseña</div>
+        <div class="afield"><label for="pwd-current">Contraseña actual</label><input type="password" id="pwd-current" autocomplete="current-password"></div>
+        <div class="afield"><label for="pwd-new">Nueva contraseña (mínimo 6 caracteres)</label><input type="password" id="pwd-new" autocomplete="new-password"></div>
+        <button class="btn-login" id="pwd-save" type="button"><span style="padding-left:0">Actualizar contraseña</span></button>
+        <div id="pwd-msg" style="margin-top:12px"></div>
+      </div>
+      <div class="card"><div class="card-title" style="margin-bottom:10px">Sesión</div><button class="btn btn-danger" id="logout-btn2" type="button">Cerrar sesión</button></div>
+    </div>
+
+    <!-- ═ Detalle de una solicitud ═ -->
+    <div id="detail-area" class="hidden">
+      <span class="back-link" id="back">&larr; Volver</span>
+      <h2 class="title" id="d-name"></h2>
+      <div class="sub" id="d-sub"></div>
+      <div id="d-purged" class="msg err hidden"></div>
+
+      <div class="card no-print acc" data-acc="link">
+        <button class="acc-hd" type="button"><span>Enlace para el cliente</span><i id="d-privacy" class="mini"></i></button>
+        <div class="acc-bd">
+          <div class="link-url" id="d-link"></div>
+          <div class="link-actions">
+            <button class="btn btn-sm btn-primary" id="d-copy">Copiar enlace</button>
+            <button class="btn btn-sm btn-wa" id="d-wa">Enviar por WhatsApp</button>
+            <button class="btn btn-sm" id="d-remind">Recordar avance</button>
+            <button class="btn btn-sm" id="d-regen">Generar enlace nuevo</button>
+          </div>
+          <div class="hint">Quien tenga el enlace puede ver y editar esta solicitud. “Generar enlace nuevo” invalida el anterior.</div>
+        </div>
+      </div>
+
+      <div class="card no-print acc" data-acc="status">
+        <button class="acc-hd" type="button"><span>Estado del trámite</span><i id="d-status-pill" class="mini"></i></button>
+        <div class="acc-bd">
+          <div class="row">
+            <div class="field" style="flex:1 1 230px"><label for="d-status">Estado</label><select id="d-status"></select></div>
+            <div class="field" style="flex:2 1 260px"><label for="d-status-note">Nota (opcional)</label><input type="text" id="d-status-note" maxlength="500"></div>
+            <button class="btn btn-primary" id="d-status-save">Actualizar</button>
+          </div>
+          <div class="hint" id="d-status-hint"></div>
+        </div>
+      </div>
+
+      <div class="card no-print acc" data-acc="cita">
+        <button class="acc-hd" type="button"><span>Cita</span><i id="d-cita-pill" class="mini"></i></button>
+        <div class="acc-bd">
+          <div class="grid2">
+            <div class="field"><label for="c-cas-d">CAS (biométricos) · fecha</label><input type="date" id="c-cas-d"></div>
+            <div class="field"><label for="c-cas-t">Hora</label><input type="time" id="c-cas-t"></div>
+            <div class="field"><label for="c-int-d">Entrevista consular · fecha</label><input type="date" id="c-int-d"></div>
+            <div class="field"><label for="c-int-t">Hora</label><input type="time" id="c-int-t"></div>
+          </div>
+          <div class="field"><label for="c-cons">Consulado / embajada</label><input type="text" id="c-cons" maxlength="120" placeholder="Ej. Ciudad de México"></div>
+          <div class="field"><label for="c-conf">N.º de confirmación del DS-160</label><input type="text" id="c-conf" maxlength="40" placeholder="AA00…"></div>
+          <label class="check"><input type="checkbox" id="c-mrv"> Pago de la cuota de visa (MRV) realizado</label>
+          <div class="field"><label for="c-notes">Notas</label><textarea id="c-notes" rows="2" maxlength="500"></textarea></div>
+          <div class="hint" id="c-purge"></div>
+          <button class="btn btn-primary btn-sm" id="c-save">Guardar cita</button> <span class="hint" id="c-hint"></span>
+        </div>
+      </div>
+
+      <div class="card no-print acc" data-acc="rem">
+        <button class="acc-hd" type="button"><span>Recordatorios</span><i id="d-rem-pill" class="mini"></i></button>
+        <div class="acc-bd">
+          <div id="rem-list"></div>
+          <div class="row" style="margin-top:8px">
+            <div class="field" style="flex:2 1 200px"><label for="rem-text">Nuevo recordatorio</label><input type="text" id="rem-text" maxlength="200" placeholder="Ej. Pedirle comprobante de pago"></div>
+            <div class="field"><label for="rem-date">Fecha</label><input type="date" id="rem-date"></div>
+            <button class="btn btn-primary" id="rem-add">Agregar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card no-print acc" data-acc="pay">
+        <button class="acc-hd" type="button"><span>Cobros</span><i id="d-pay-pill" class="mini"></i></button>
+        <div class="acc-bd">
+          <div class="field"><label for="pay-price">Precio del servicio (MXN)</label><input type="number" id="pay-price" min="0" step="50" inputmode="decimal"></div>
+          <div id="pay-list"></div>
+          <div class="row" style="margin-top:8px">
+            <div class="field"><label for="pay-amount">Pago recibido (MXN)</label><input type="number" id="pay-amount" min="0" step="50" inputmode="decimal"></div>
+            <div class="field"><label for="pay-method">Forma de pago</label><select id="pay-method"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Otro</option></select></div>
+            <button class="btn btn-primary" id="pay-add">Registrar pago</button>
+          </div>
+          <div class="hint" id="pay-hint"></div>
+        </div>
+      </div>
+
+      <div class="card no-print acc" data-acc="fam">
+        <button class="acc-hd" type="button"><span>Familia / grupo de viaje</span><i id="d-fam-pill" class="mini"></i></button>
+        <div class="acc-bd">
+          <div id="fam-list"></div>
+          <div class="hint" style="margin-top:0">Agrega a otra persona del mismo viaje: se crea su propia solicitud y enlace, ya con los datos compartidos.</div>
+          <div class="field"><label for="fam-name">Nombre del nuevo integrante</label><input type="text" id="fam-name" maxlength="150"></div>
+          <div id="fam-copy" class="checks"></div>
+          <button class="btn btn-primary btn-sm" id="fam-add">Crear solicitud y enlace</button>
+          <div id="fam-msg" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-view="v-answers">Hoja de captura</button>
+        <button class="tab" data-view="v-docs">Documentos</button>
+        <button class="tab" data-view="v-log">Historial</button>
+      </div>
+
+      <div id="v-answers" class="view active">
+        <div class="toolbar no-print">
+          <button class="btn btn-sm" id="copy-all">Copiar todo como texto</button>
+          <button class="btn btn-sm" id="print-btn">Imprimir / guardar PDF</button>
+          <span class="cap-progress" id="cap-progress"></span>
+        </div>
+        <div class="hint no-print" style="margin:0 0 10px">Captura sección por sección en el portal oficial, toca un dato para copiarlo y marca cada sección al terminar. En rojo: obligatorias sin responder.</div>
+        <div id="answers"></div>
+      </div>
+      <div id="v-docs" class="view"><div class="card" id="d-docs"></div></div>
+      <div id="v-log" class="view"><div class="card" id="d-log"></div></div>
+
+      <div class="no-print" style="margin-top:24px"><button class="btn btn-danger btn-sm" id="d-delete">Eliminar esta solicitud</button></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Navegación">
+    <button type="button" data-nav="apps" class="active"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><b class="nbadge hidden" id="nav-badge">0</b>Solicitudes</button>
+    <button type="button" data-nav="clients"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-5.6 6-5.6s6 2 6 5.6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c3 .1 5 1.9 5 5"/></svg>Clientes</button>
+    <button type="button" data-nav="reports"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-7"/></svg>Reportes</button>
+    <button type="button" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuración</button>
+  </nav>
+</div>
+
+<script src="/ds160-logic.js"></script>
+<script src="/panel.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});</script>
+</body>
+</html>

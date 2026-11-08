@@ -84,3 +84,20 @@ alter table documents enable row level security;
 alter table statuses enable row level security;
 -- Sin políticas: solo la clave de servicio (usada por el backend) puede
 -- leer o escribir estas tablas; el navegador nunca tiene acceso directo.
+
+-- ── Ampliaciones (v3): cita, recordatorios, cobros, familia, avisos, privacidad ──
+alter table applications add column if not exists group_id text;
+alter table applications add column if not exists appointment jsonb not null default '{}'::jsonb;
+alter table applications add column if not exists reminders jsonb not null default '[]'::jsonb;
+alter table applications add column if not exists payments jsonb not null default '{}'::jsonb;
+alter table applications add column if not exists capture jsonb not null default '{}'::jsonb;
+alter table applications add column if not exists privacy_accepted_at timestamptz;
+alter table applications add column if not exists admin_seen_at timestamptz;
+alter table applications add column if not exists purged_at timestamptz;
+create index if not exists applications_group_idx on applications(group_id);
+
+create table if not exists settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb
+);
+alter table settings enable row level security;

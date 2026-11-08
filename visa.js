@@ -8,7 +8,8 @@ const crypto = require('crypto');
 const multer = require('multer');
 const contentDisposition = require('content-disposition');
 const { pool } = require('./db');
-const { SECTIONS, DATALISTS, STATUS_OPTIONS, DOCUMENT_CATEGORIES } = require('./ds160-schema');
+const { SECTIONS, DATALISTS, STATUS_OPTIONS, DOCUMENT_CATEGORIES, FAMILY_COPY } = require('./ds160-schema');
+const ops = require('./ops');
 const DS160 = require('./public/ds160-logic');
 
 const DEFAULT_STATUS = STATUS_OPTIONS[0].value;
@@ -109,9 +110,20 @@ function sendDocument(res, entry) {
 
 const router = express.Router();
 
+// ── Ajustes del asesor ───────────────────────────────────────────────────────
+async function getSettings() {
+  const { rows } = await pool.query("select value from settings where key = 'main'");
+  const v = (rows[0] && rows[0].value) || {};
+  return { whatsapp: String(v.whatsapp || ''), notifyEmail: String(v.notifyEmail || ''), advisorName: String(v.advisorName || 'Ing. Luis Eduardo Rangel Llanes') };
+}
+router.get('/public-config', pub(async (req, res) => {
+  const st = await getSettings();
+  res.json({ whatsapp: st.whatsapp, advisorName: st.advisorName });
+}));
+
 // ── Esquema (público, para renderizar el formulario) ─────────────────────────
 router.get('/schema', (req, res) => {
-  res.json({ sections: SECTIONS, datalists: DATALISTS, statusOptions: STATUS_OPTIONS, documentCategories: DOCUMENT_CATEGORIES });
+  res.json({ sections: SECTIONS, datalists: DATALISTS, statusOptions: STATUS_OPTIONS, documentCategories: DOCUMENT_CATEGORIES, familyCopy: FAMILY_COPY, retentionDays: ops.RETENTION_DAYS });
 });
 
 // ══ CLIENTE (enlace secreto) ═════════════════════════════════════════════════
@@ -119,6 +131,7 @@ async function loadByLink(req, res, next) {
   try {
     const a = await findApplicationByToken(req.params.token);
     if (!a) return res.status(404).json({ error: 'Este enlace no es válido o ya no está activo. Pide uno nuevo a tu asesor.' });
+    if (a.purged_at) return res.status(410).json({ error: 'Este trámite ya fue cerrado y, por tu privacidad, tus datos fueron eliminados.' });
     req.application = a;
     next();
   } catch (err) {
@@ -130,14 +143,23 @@ async function loadByLink(req, res, next) {
 router.get('/s/:token', loadByLink, pub(async (req, res) => {
   const a = req.application;
   await pool.query('update applications set last_opened_at = now() where id = $1', [a.id]);
+  const cfg = await getSettings();
   res.json({
     clientName: a.client_name,
+    privacyAcceptedAt: a.privacy_accepted_at,
+    advisor: { name: cfg.advisorName, whatsapp: cfg.whatsapp },
     data: a.data || {},
     status: statusOf(a),
     submittedAt: a.submitted_at,
     updatedAt: a.updated_at,
     documents: await listDocs(a.id),
   });
+}));
+
+router.post('/s/:token/consent', loadByLink, pub(async (req, res) => {
+  await pool.query('update applications set privacy_accepted_at = coalesce(privacy_accepted_at, now()) where id = $1', [req.application.id]);
+  await pushLog(req.application.id, 'privacy_accepted', 'El cliente aceptó el aviso de privacidad');
+  res.json({ ok: true });
 }));
 
 router.put('/s/:token', loadByLink, pub(async (req, res) => {
@@ -170,6 +192,12 @@ router.post('/s/:token/submit', loadByLink, pub(async (req, res) => {
   );
   await pushLog(a.id, 'submitted', a.submitted_at ? 'Reenviado por el cliente' : 'Formulario enviado por el cliente');
   res.json({ ok: true });
+  // Aviso por correo al asesor (opcional; no bloquea la respuesta al cliente).
+  getSettings().then((cfg) => ops.sendMail({
+    to: cfg.notifyEmail,
+    subject: `Visapp: ${a.client_name} envió su formulario`,
+    text: `${a.client_name} terminó y envió su formulario DS-160.\n\nRevísalo en el panel de Visapp.`,
+  })).catch((e) => console.error('No se pudo enviar el aviso por correo:', e.message));
 }));
 
 router.get('/s/:token/documents', loadByLink, pub(async (req, res) => {
@@ -297,13 +325,19 @@ router.put('/password', auth, wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-function summarize(a, docCount) {
+function summarize(a, docCount, groupSize) {
   const c = DS160.completion(SECTIONS, a.data);
+  const payments = a.payments && a.payments.items ? a.payments : { price: 0, items: [] };
   return {
     id: a.id, token: a.token, clientName: a.client_name, note: a.client_note,
     status: statusOf(a), completion: { pct: c.pct, filled: c.filled, total: c.total },
     documentCount: docCount, createdAt: a.created_at, updatedAt: a.updated_at,
     submittedAt: a.submitted_at, lastOpenedAt: a.last_opened_at,
+    unread: !!a.submitted_at && (!a.admin_seen_at || new Date(a.admin_seen_at) < new Date(a.submitted_at)),
+    groupId: a.group_id || null, groupSize: groupSize || 1,
+    appointment: a.appointment || {},
+    balance: ops.balance(payments),
+    purgeOn: ops.purgeDate(a.appointment), purgedAt: a.purged_at,
   };
 }
 
@@ -312,7 +346,9 @@ router.get('/admin/applications', auth, wrap(async (req, res) => {
     `select a.*, (select count(*)::int from application_documents d where d.application_id = a.id) as doc_count
      from applications a order by a.created_at desc`
   );
-  res.json({ applications: rows.map((a) => summarize(a, a.doc_count)) });
+  const sizes = {};
+  rows.forEach((a) => { if (a.group_id) sizes[a.group_id] = (sizes[a.group_id] || 0) + 1; });
+  res.json({ applications: rows.map((a) => summarize(a, a.doc_count, sizes[a.group_id])) });
 }));
 
 router.post('/admin/applications', auth, wrap(async (req, res) => {
@@ -331,12 +367,24 @@ router.get('/admin/applications/:id', auth, wrap(async (req, res) => {
   if (!a) return res.status(404).json({ error: 'No encontrado' });
   const c = DS160.completion(SECTIONS, a.data);
   const log = Array.isArray(a.log) ? a.log : [];
+  const docs = await listDocs(a.id);
+  let members = [];
+  if (a.group_id) {
+    const m = await pool.query('select id, client_name, status, submitted_at from applications where group_id = $1 order by created_at asc', [a.group_id]);
+    members = m.rows.map((r) => ({ id: r.id, clientName: r.client_name, status: r.status, submittedAt: r.submitted_at }));
+  }
   res.json({
-    application: summarize(a, (await listDocs(a.id)).length),
+    application: summarize(a, docs.length, members.length || 1),
     data: a.data || {},
-    documents: await listDocs(a.id),
+    documents: docs,
     log: log.slice(-200).reverse(),
     missing: c.missing,
+    appointment: a.appointment || {},
+    reminders: Array.isArray(a.reminders) ? a.reminders : [],
+    payments: a.payments && a.payments.items ? a.payments : { price: 0, items: [] },
+    capture: a.capture || {},
+    privacyAcceptedAt: a.privacy_accepted_at,
+    members,
   });
 }));
 
@@ -386,4 +434,126 @@ router.get('/admin/applications/:id/documents/:docId/download', auth, wrap(async
   sendDocument(res, rows[0]);
 }));
 
+
+// ── Cita, recordatorios, cobros, hoja de captura (los llena el administrador) ─
+router.put('/admin/applications/:id/cita', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const appointment = ops.sanitizeAppointment((req.body || {}).appointment);
+  await pool.query('update applications set appointment = $2::jsonb where id = $1', [a.id, JSON.stringify(appointment)]);
+  await pushLog(a.id, 'appointment_saved', 'Datos de la cita actualizados');
+  res.json({ ok: true, appointment, purgeOn: ops.purgeDate(appointment) });
+}));
+
+router.put('/admin/applications/:id/reminders', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const reminders = ops.sanitizeReminders((req.body || {}).reminders);
+  await pool.query('update applications set reminders = $2::jsonb where id = $1', [a.id, JSON.stringify(reminders)]);
+  res.json({ ok: true, reminders });
+}));
+
+router.post('/admin/applications/:id/reminders/:rid/done', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const reminders = (Array.isArray(a.reminders) ? a.reminders : []).map((r) => (r.id === req.params.rid ? { ...r, done: true } : r));
+  await pool.query('update applications set reminders = $2::jsonb where id = $1', [a.id, JSON.stringify(reminders)]);
+  res.json({ ok: true });
+}));
+
+router.put('/admin/applications/:id/payments', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const payments = ops.sanitizePayments((req.body || {}).payments);
+  await pool.query('update applications set payments = $2::jsonb where id = $1', [a.id, JSON.stringify(payments)]);
+  res.json({ ok: true, payments, balance: ops.balance(payments) });
+}));
+
+router.put('/admin/applications/:id/capture', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  const capture = ops.sanitizeCapture((req.body || {}).capture, SECTIONS.map((s) => s.id));
+  await pool.query('update applications set capture = $2::jsonb where id = $1', [a.id, JSON.stringify(capture)]);
+  res.json({ ok: true, capture });
+}));
+
+router.post('/admin/applications/:id/seen', auth, wrap(async (req, res) => {
+  await pool.query('update applications set admin_seen_at = now() where id = $1', [req.params.id]);
+  res.json({ ok: true });
+}));
+
+// ── Familia / grupo de viaje: nueva solicitud copiando datos compartidos ─────
+router.post('/admin/applications/:id/duplicate', auth, wrap(async (req, res) => {
+  const src = await findApplicationById(req.params.id);
+  if (!src) return res.status(404).json({ error: 'No encontrado' });
+  if (src.purged_at) return res.status(400).json({ error: 'Esta solicitud ya fue depurada: no hay datos que copiar' });
+  const name = String((req.body || {}).name || '').trim().slice(0, 150);
+  if (!name) return res.status(400).json({ error: 'El nombre del nuevo integrante es obligatorio' });
+  const wanted = Array.isArray((req.body || {}).copy) ? req.body.copy : [];
+  const data = {};
+  FAMILY_COPY.filter((g) => wanted.includes(g.id)).forEach((g) => g.fields.forEach((f) => {
+    if (src.data && src.data[f] !== undefined && src.data[f] !== '') data[f] = src.data[f];
+  }));
+  const groupId = src.group_id || newId();
+  const id = newId();
+  const token = newToken();
+  await pool.query('update applications set group_id = $2 where id = $1', [src.id, groupId]);
+  await pool.query(
+    `insert into applications (id, token, client_name, client_note, data, group_id, appointment, payments)
+     values ($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,'{}'::jsonb)`,
+    [id, token, name, src.client_note || '', JSON.stringify(data), groupId, JSON.stringify(ops.sanitizeAppointment({
+      casDate: src.appointment && src.appointment.casDate, interviewDate: src.appointment && src.appointment.interviewDate,
+      consulate: src.appointment && src.appointment.consulate }))]
+  );
+  await pushLog(id, 'link_created', `Agregado al grupo de ${src.client_name} (se copiaron ${Object.keys(data).length} datos)`);
+  await pushLog(src.id, 'group_member_added', `Se agregó a ${name} al grupo`);
+  res.json({ ok: true, application: summarize(await findApplicationById(id), 0, 2) });
+}));
+
+// ── Resumen del día, reportes y ajustes ──────────────────────────────────────
+router.get('/admin/overview', auth, wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    `select id, client_name, submitted_at, admin_seen_at, reminders, appointment, purged_at from applications where purged_at is null`
+  );
+  const today = ops.todayStr();
+  const reminders = [], upcoming = [];
+  let unread = 0;
+  rows.forEach((a) => {
+    if (a.submitted_at && (!a.admin_seen_at || new Date(a.admin_seen_at) < new Date(a.submitted_at))) unread++;
+    (Array.isArray(a.reminders) ? a.reminders : []).forEach((r) => {
+      if (!r.done && r.date && r.date <= today) reminders.push({ appId: a.id, clientName: a.client_name, id: r.id, date: r.date, text: r.text, overdue: r.date < today });
+    });
+    const ap = a.appointment || {};
+    [['CAS (biométricos)', ap.casDate, ap.casTime], ['Entrevista', ap.interviewDate, ap.interviewTime]].forEach(([kind, d, t]) => {
+      if (d && d >= today) upcoming.push({ appId: a.id, clientName: a.client_name, kind, date: d, time: t || '' });
+    });
+  });
+  reminders.sort((x, y) => x.date.localeCompare(y.date));
+  upcoming.sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
+  res.json({ unread, reminders, upcoming: upcoming.slice(0, 10) });
+}));
+
+router.get('/admin/reports', auth, wrap(async (req, res) => {
+  const { rows } = await pool.query('select status, created_at, submitted_at, payments from applications');
+  res.json(ops.buildReport(rows));
+}));
+
+router.get('/admin/settings', auth, wrap(async (req, res) => {
+  res.json({ settings: await getSettings(), emailConfigured: !!process.env.SMTP_URL });
+}));
+router.put('/admin/settings', auth, wrap(async (req, res) => {
+  const b = req.body || {};
+  const value = {
+    whatsapp: String(b.whatsapp || '').replace(/\D/g, '').slice(0, 15),
+    notifyEmail: String(b.notifyEmail || '').trim().slice(0, 120),
+    advisorName: String(b.advisorName || '').trim().slice(0, 100) || 'Ing. Luis Eduardo Rangel Llanes',
+  };
+  await pool.query(
+    `insert into settings (key, value) values ('main', $1::jsonb) on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify(value)]
+  );
+  res.json({ ok: true, settings: value });
+}));
+
 module.exports = router;
+module.exports.purgeExpired = () => ops.purgeExpired(pool);
