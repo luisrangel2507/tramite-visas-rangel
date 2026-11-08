@@ -16,6 +16,15 @@ const RECEIVED_STATUS = 'formulario_recibido';
 const ADMIN_EMAIL = (process.env.VISA_ADMIN_EMAIL || 'luisrangel2507@gmail.com').toLowerCase();
 const EXTRA_KEYS = ['declaracion']; // claves fuera del esquema que el cliente puede guardar
 const MAX_DOCS_PER_APPLICATION = 20;
+// Gmail ignora los puntos y lo que va tras "+": luis.rangel@gmail.com == luisrangel@gmail.com.
+function sameMailbox(a, b) {
+  const norm = (e) => {
+    const [user, domain] = String(e).trim().toLowerCase().split('@');
+    if (domain === 'gmail.com' || domain === 'googlemail.com') return user.split('+')[0].replace(/\./g, '') + '@gmail.com';
+    return user + '@' + domain;
+  };
+  return norm(a) === norm(b);
+}
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
 function wrap(fn, publicRoute) {
@@ -238,7 +247,7 @@ router.post('/register', wrap(async (req, res) => {
     return res.status(400).json({ error: 'Nombre, correo y contraseña (mínimo 6 caracteres) son obligatorios' });
   }
   const emailLc = String(email).trim().toLowerCase();
-  if (emailLc !== ADMIN_EMAIL) {
+  if (!sameMailbox(emailLc, ADMIN_EMAIL)) {
     return res.status(403).json({ error: 'El registro está reservado al administrador.' });
   }
   const existing = await pool.query('select 1 from users where email = $1', [emailLc]);
