@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#4d6f9f">
+<meta name="theme-color" content="#1f3560">
 <title>Visapp — Gestión de visas desde tu celular</title>
 <meta name="description" content="Llena tu formulario DS-160 desde el celular, paso a paso y con apoyo de un asesor. Trámite de tu cita de visa americana.">
 <link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="preload" as="image" href="/hero-passport.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
@@ -16,70 +17,81 @@
   html { scroll-behavior: smooth; }
   body { font-family: 'Inter', sans-serif; color: var(--navy); background: var(--bg); line-height: 1.55; -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
-  h1, h2, h3, .wm { font-family: 'Montserrat', sans-serif; letter-spacing: -.02em; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; }
+  h1, h2, h3 { font-family: 'Montserrat', sans-serif; letter-spacing: -.02em; }
   :focus-visible { outline: 3px solid rgba(184,132,31,.6); outline-offset: 2px; }
+  svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-  .hero { position: relative; overflow: hidden; color: #fff; padding: calc(18px + env(safe-area-inset-top)) 0 90px;
-    background: linear-gradient(180deg, #3f6296 0%, #7f9cc4 45%, #e6b392 80%, #f3d5c3 100%); }
-  .hero::after { content: ''; position: absolute; left: -10%; right: -10%; bottom: -1px; height: 90px; background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
-  .clouds { position: absolute; inset: auto 0 20px 0; height: 140px; filter: blur(14px); opacity: .8; pointer-events: none;
-    background: radial-gradient(70px 26px at 12% 60%, #fff 0, transparent 70%), radial-gradient(100px 30px at 40% 40%, #fff 0, transparent 70%), radial-gradient(80px 26px at 70% 65%, #ffe9d6 0, transparent 70%), radial-gradient(90px 28px at 92% 45%, #fff 0, transparent 70%); }
-  .trail { position: absolute; bottom: 120px; right: 0; width: min(42vw, 260px); opacity: .9; pointer-events: none; transform: scaleX(-1); }
+  /* ── Hero con foto ── */
+  .hero { position: relative; overflow: hidden; color: #fff; padding: calc(18px + env(safe-area-inset-top)) 0 330px;
+    background: linear-gradient(180deg, #1c3158 0%, #34507f 38%, #6a7fa6 62%, #8e93a3 82%, #7d7a7c 100%); }
+  .photo { position: absolute; left: 0; right: 0; bottom: 0; height: min(88vw, 420px); min-height: 300px; background: url('/hero-passport.jpg') 20% bottom / cover no-repeat;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 38%); mask-image: linear-gradient(180deg, transparent 0, #000 38%); }
+  .hero::after { content: ''; position: absolute; left: -12%; right: -12%; bottom: -1px; height: 80px; background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0; z-index: 1; }
+  .glow { position: absolute; right: -80px; top: 90px; width: 360px; height: 360px; background: radial-gradient(circle, rgba(244,176,120,.45), transparent 65%); pointer-events: none; }
   nav { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; }
-  .brand img { width: 40px; height: 40px; filter: drop-shadow(0 6px 10px rgba(10,19,48,.3)); } .brand span { color: var(--gold-soft); }
-  .nav-link { font-size: 14px; font-weight: 600; text-decoration: none; background: rgba(255,255,255,.18); padding: 8px 14px; border-radius: 999px; backdrop-filter: blur(6px); }
-  .hero-body { position: relative; z-index: 2; padding: 56px 0 10px; max-width: 620px; }
-  .hero h1 { font-size: clamp(32px, 7vw, 52px); font-weight: 800; line-height: 1.08; text-shadow: 0 2px 20px rgba(10,19,48,.25); }
-  .hero p { font-size: clamp(16px, 2.6vw, 19px); margin: 16px 0 26px; max-width: 520px; text-shadow: 0 1px 12px rgba(10,19,48,.3); }
-  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
-  .btn { display: inline-flex; align-items: center; gap: 9px; font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; padding: 15px 24px; border-radius: 16px; border: none; cursor: pointer; transition: transform .12s; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -.5px; }
+  .brand img { width: 44px; height: 44px; filter: drop-shadow(0 6px 10px rgba(10,19,48,.35)); } .brand span { color: var(--gold-soft); }
+  .nav-link { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; text-decoration: none; border: 1.5px solid rgba(255,255,255,.75); padding: 9px 16px; border-radius: 14px; backdrop-filter: blur(6px); background: rgba(14,26,56,.18); }
+  .nav-link svg { width: 20px; height: 20px; }
+  .hero-body { position: relative; z-index: 2; padding: 46px 0 10px; max-width: 640px; }
+  .hero h1 { font-size: clamp(34px, 8vw, 54px); font-weight: 800; line-height: 1.06; text-shadow: 0 2px 22px rgba(10,19,48,.35); position: relative; padding-bottom: 20px; }
+  .hero h1 .ul { position: absolute; left: 0; bottom: 0; width: min(78%, 330px); height: 14px; }
+  .hero p { font-size: clamp(16px, 2.6vw, 19px); margin: 22px 0 28px; max-width: 500px; text-shadow: 0 1px 14px rgba(10,19,48,.45); }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; font: inherit; font-weight: 600; font-size: 16.5px; text-decoration: none; padding: 16px 26px; border-radius: 18px; border: none; cursor: pointer; transition: transform .12s; }
   .btn:active { transform: scale(.97); }
-  .btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .btn-wa { background: var(--green); color: #fff; box-shadow: 0 14px 28px -12px rgba(10,80,40,.7); }
-  .btn-light { background: rgba(255,255,255,.95); color: var(--navy); }
+  .btn svg.wa { width: 26px; height: 26px; fill: currentColor; }
+  .btn-wa { background: linear-gradient(180deg, #25B862, #158F48); color: #fff; box-shadow: 0 16px 28px -12px rgba(10,80,40,.8); }
+  .btn-light { background: rgba(255,255,255,.96); color: var(--navy); } .btn-light svg { width: 20px; height: 20px; }
+  .login-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 15px; font-weight: 600; text-decoration: none; color: #fff; text-shadow: 0 1px 10px rgba(10,19,48,.6); }
+  .login-link u { text-decoration-color: var(--gold-soft); text-underline-offset: 4px; }
   .hidden { display: none !important; }
 
+  /* ── Secciones ── */
   section { padding: 54px 0 10px; }
-  section h2 { font-size: clamp(26px, 5vw, 36px); font-weight: 800; text-align: center; }
-  .lead { text-align: center; color: var(--muted); max-width: 560px; margin: 10px auto 30px; }
-  .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); counter-reset: s; }
-  .step, .card { background: #fff; border: 1px solid var(--border); border-radius: 22px; padding: 24px 22px; box-shadow: 0 18px 38px -28px rgba(22,33,61,.45); }
+  section h2 { font-size: clamp(27px, 5vw, 38px); font-weight: 800; text-align: center; position: relative; padding-bottom: 16px; }
+  section h2::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 64px; height: 4px; margin-left: -32px; border-radius: 4px; background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); }
+  .lead { text-align: center; color: var(--muted); max-width: 560px; margin: 8px auto 30px; }
+  .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); counter-reset: s; }
+  .step, .card { position: relative; background: #fff; border: 1px solid var(--border); border-radius: 22px; padding: 22px 22px; box-shadow: 0 18px 38px -28px rgba(22,33,61,.45); }
   .step::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F0CF7A, #B8841F); color: #2a1d05; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 12px; }
+  .chip { position: absolute; top: 18px; right: 18px; width: 54px; height: 54px; border-radius: 16px; background: #EEF2F9; display: grid; place-items: center; color: #3b4f78; }
+  .chip svg { width: 26px; height: 26px; }
   .step h3, .card h3 { font-size: 18px; margin-bottom: 6px; } .step p, .card p { color: var(--muted); font-size: 15px; }
+  .step p { padding-right: 6px; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  .card .ic { font-size: 28px; margin-bottom: 8px; }
-  .why { background: var(--navy-deep); color: #fff; border-radius: 28px; padding: 34px 24px; margin-top: 54px; }
-  .why h2 { color: #fff; } .why .grid { margin-top: 22px; } .why .card { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12); box-shadow: none; } .why .card p { color: #B9C4DA; }
+  .card .ic { width: 50px; height: 50px; border-radius: 15px; background: #EEF2F9; display: grid; place-items: center; font-size: 25px; margin-bottom: 12px; }
+  .why { background: var(--navy-deep); color: #fff; border-radius: 28px; padding: 34px 22px; margin-top: 54px; }
+  .why h2 { color: #fff; } .why .grid { margin-top: 22px; } .why .card { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12); box-shadow: none; } .why .card p { color: #B9C4DA; } .why .card .ic { background: rgba(255,255,255,.1); }
   details { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; }
-  summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; } summary::after { content: '+'; color: var(--gold); font-size: 22px; line-height: 1; }
+  summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; } summary::-webkit-details-marker { display: none; } summary::after { content: '+'; color: var(--gold); font-size: 22px; line-height: 1; }
   details[open] summary::after { content: '–'; } details p { margin-top: 10px; color: var(--muted); font-size: 15px; }
   .band { text-align: center; padding: 50px 0 30px; } .band .cta { justify-content: center; margin-top: 18px; }
-  .band .btn-light { background: #fff; border: 1px solid var(--border); }
   footer { padding: 30px 0 calc(40px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 13px; text-align: center; }
   footer a { color: var(--navy); } footer p { max-width: 640px; margin: 8px auto; }
-  .fab { position: fixed; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; }
+  @media (min-width: 760px) { .photo { height: 460px; background-position: center bottom; } .hero { padding-bottom: 360px; } .hero-body { padding-top: 70px; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
 </style>
 </head>
 <body>
 
 <header class="hero">
-  <div class="clouds"></div>
-  <svg class="trail" viewBox="0 0 220 110" aria-hidden="true"><path d="M2 100C40 60 90 40 150 54 175 60 190 52 200 40" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/><g transform="translate(176 8) scale(1.7) rotate(60 12 12)" fill="#fff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g></svg>
+  <div class="glow"></div>
+  <div class="photo" role="img" aria-label="Pasaporte mexicano sobre una mesa en un aeropuerto al atardecer"></div>
   <div class="wrap">
     <nav aria-label="Principal">
       <a class="brand" href="/"><img src="/logo.svg" alt=""><div>Visa<span>pp</span></div></a>
-      <a class="nav-link" href="/panel">Acceso asesor</a>
+      <a class="nav-link" href="/panel"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Acceso asesor</a>
     </nav>
     <div class="hero-body">
-      <h1>Tu trámite de visa, sin complicaciones</h1>
+      <h1>Tu trámite de visa, sin complicaciones.<svg class="ul" viewBox="0 0 340 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10C70 3 200 2 337 8" fill="none" stroke="#E3BB66" stroke-width="3.5" stroke-linecap="round"/></svg></h1>
       <p>Llena tu formulario DS-160 desde el celular, paso a paso y con el apoyo de un asesor. Sin filas, sin papeleo confuso.</p>
       <div class="cta">
-        <a class="btn btn-wa hidden" id="cta-wa" target="_blank" rel="noopener" href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>Escríbenos por WhatsApp</a>
-        <a class="btn btn-light" href="#como">¿Cómo funciona?</a>
+        <a class="btn btn-wa hidden" id="cta-wa" target="_blank" rel="noopener" href="#"><svg class="wa" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Escríbenos por WhatsApp</a>
+        <a class="btn btn-light" href="#como">¿Cómo funciona?<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
+      <a class="login-link" href="/entrar"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>¿Ya tienes usuario y contraseña? <u>Entra a tu solicitud</u></span></a>
     </div>
   </div>
 </header>
@@ -89,9 +101,9 @@
     <h2>Así de fácil</h2>
     <p class="lead">Tú llenas tus datos, nosotros nos encargamos del resto.</p>
     <div class="steps">
-      <div class="step"><h3>Recibes tu enlace</h3><p>Tu asesor te manda por WhatsApp un enlace personal. No necesitas crear cuenta ni contraseña.</p></div>
-      <div class="step"><h3>Llenas tu información</h3><p>Unos 20 minutos, de 5 en 5 preguntas. Se guarda sola y puedes pausar y continuar cuando quieras.</p></div>
-      <div class="step"><h3>Nosotros hacemos el trámite</h3><p>Revisamos tus datos, gestionamos tu cita y te mantenemos al tanto de cada paso.</p></div>
+      <div class="step"><div class="chip"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.700l1-1"/></svg></div><h3>Recibes tu acceso</h3><p>Tu asesor te manda por WhatsApp tu enlace, tu usuario y tu contraseña.</p></div>
+      <div class="step"><div class="chip"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.500 6.500l4 4"/></svg></div><h3>Llenas tu información</h3><p>Unos 20 minutos, de 5 en 5 preguntas. Se guarda sola y puedes continuar cuando quieras.</p></div>
+      <div class="step"><div class="chip"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.500l3 3 5-6"/></svg></div><h3>Nosotros hacemos el trámite</h3><p>Revisamos tus datos, gestionamos tu cita y te mantenemos al tanto de cada paso.</p></div>
     </div>
   </div></section>
 
@@ -106,7 +118,7 @@
     <div class="why">
       <h2>¿Por qué Visapp?</h2>
       <div class="grid">
-        <div class="card"><div class="ic">📱</div><h3>Desde tu celular</h3><p>Todo en un solo enlace, sin instalar nada.</p></div>
+        <div class="card"><div class="ic">📱</div><h3>Desde tu celular</h3><p>Entras con tu usuario y contraseña, sin instalar nada.</p></div>
         <div class="card"><div class="ic">🔒</div><h3>Tus datos protegidos</h3><p>Solo tu asesor los ve y se eliminan 2 meses después de tu cita.</p></div>
         <div class="card"><div class="ic">💬</div><h3>Con acompañamiento</h3><p>Un asesor real te responde por WhatsApp.</p></div>
       </div>
@@ -118,22 +130,22 @@
     <p class="lead">Lo que más nos preguntan.</p>
     <details><summary>¿Cuánto cuesta el servicio?</summary><p>Depende de lo que necesites y de cuántas personas viajen. Escríbenos por WhatsApp y te cotizamos sin compromiso.</p></details>
     <details><summary>¿Me garantizan la visa?</summary><p>No. Nadie puede garantizarla: la decisión es únicamente del consulado de Estados Unidos. Nuestro trabajo es que tu solicitud esté bien preparada y que no pierdas tiempo ni dinero por errores.</p></details>
+    <details><summary>¿Cómo entro a llenar mi formulario?</summary><p>Tu asesor te manda un usuario y una contraseña. Entra a <a href="/entrar"><b>Entrar a mi solicitud</b></a> o abre el enlace personal que te envió.</p></details>
     <details><summary>¿Qué necesito para empezar?</summary><p>Tu pasaporte vigente y, si la tuviste, tu visa anterior. También datos de tu viaje (fechas y dónde te hospedarás) y de tu trabajo o estudios.</p></details>
     <details><summary>¿Qué pasa con mis datos?</summary><p>Los usamos solo para tu trámite y los eliminamos automáticamente 2 meses después de tu cita. Puedes leer el <a href="/privacidad">Aviso de Privacidad</a>.</p></details>
-    <details><summary>¿Puedo llenar el formulario en varios días?</summary><p>Sí. Todo se guarda solo; abre otra vez tu enlace y continúas donde te quedaste.</p></details>
+    <details><summary>¿Puedo llenar el formulario en varios días?</summary><p>Sí. Todo se guarda solo; entra de nuevo con tu usuario y contraseña y continúas donde te quedaste.</p></details>
   </div></section>
 
   <div class="band"><div class="wrap">
-    <h2>¿Listo para empezar?</h2>
+    <h2 style="font-size:clamp(26px,5vw,34px);font-weight:800;font-family:'Montserrat',sans-serif">¿Listo para empezar?</h2>
     <div class="cta">
-      <a class="btn btn-wa hidden" id="cta-wa2" target="_blank" rel="noopener" href="#"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>Hablar con un asesor</a>
+      <a class="btn btn-wa hidden" id="cta-wa2" target="_blank" rel="noopener" href="#"><svg class="wa" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Hablar con un asesor</a>
     </div>
-    <p class="lead" id="no-wa" style="margin-top:14px">¿Ya tienes tu enlace? Ábrelo desde el mensaje que te mandó tu asesor.</p>
   </div></div>
 </main>
 
 <footer><div class="wrap">
-  <p><b>Visapp</b> · <a href="/privacidad">Aviso de Privacidad</a> · <a href="/panel">Acceso asesor</a></p>
+  <p><b>Visapp</b> · <a href="/entrar">Entrar a mi solicitud</a> · <a href="/privacidad">Aviso de Privacidad</a> · <a href="/panel">Acceso asesor</a></p>
   <p>Visapp es un servicio privado de asesoría y gestoría. No somos el Gobierno de los Estados Unidos ni el Departamento de Estado, y no garantizamos la aprobación de ninguna visa: la decisión corresponde exclusivamente a las autoridades consulares.</p>
 </div></footer>
 

@@ -26,6 +26,32 @@ function sameMailbox(a, b) {
   };
   return norm(a) === norm(b);
 }
+// ── Acceso de clientes (usuario + contraseña) ───────────────────────────────
+const PASS_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+function generatePassword() {
+  const bytes = crypto.randomBytes(8);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += PASS_CHARS[bytes[i] % PASS_CHARS.length];
+  return out;
+}
+function slugName(name) {
+  const w = String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  if (!w.length) return 'cliente';
+  const last = w.length > 1 ? w[w.length > 2 ? w.length - 2 : 1] : '';
+  return last ? w[0] + '.' + last : w[0];
+}
+// Límite de intentos fallidos: 8 por usuario/IP, bloqueo de 15 min.
+const attempts = new Map();
+function lockedOut(key) { const e = attempts.get(key); return !!e && e.n >= 8 && e.until > Date.now(); }
+function recordFail(key) {
+  if (attempts.size > 5000) attempts.clear();
+  let e = attempts.get(key);
+  if (!e || (e.until && e.until <= Date.now())) e = { n: 0, until: 0 };
+  e.n++; if (e.n >= 8) e.until = Date.now() + 15 * 60 * 1000;
+  attempts.set(key, e);
+}
+const clearFails = (key) => attempts.delete(key);
+
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
 function wrap(fn, publicRoute) {
@@ -69,6 +95,37 @@ async function findApplicationById(id) {
   const { rows } = await pool.query('select * from applications where id = $1', [id]);
   return rows[0] || null;
 }
+async function uniqueUsername(name) {
+  const base = slugName(name);
+  for (let i = 0; i < 12; i++) {
+    const cand = base + (i < 8 ? String(10 + crypto.randomInt(90)) : String(1000 + crypto.randomInt(9000)));
+    const { rowCount } = await pool.query('select 1 from applications where lower(username) = $1', [cand]);
+    if (!rowCount) return cand;
+  }
+  return base + crypto.randomBytes(3).toString('hex');
+}
+// Crea (o restablece) el acceso de un cliente. La contraseña solo se devuelve aquí.
+async function issueCredentials(a) {
+  const username = a.username || (await uniqueUsername(a.client_name));
+  const password = generatePassword();
+  const salt = crypto.randomBytes(16).toString('hex');
+  await pool.query('update applications set username = $2, pass_salt = $3, pass_hash = $4, pass_changed_at = now() where id = $1',
+    [a.id, username, salt, hashPassword(password, salt)]);
+  await pool.query('delete from client_sessions where application_id = $1', [a.id]);
+  return { username, password };
+}
+async function startClientSession(appId) {
+  const token = crypto.randomBytes(24).toString('hex');
+  await pool.query("delete from client_sessions where application_id = $1 and created_at < now() - interval '30 days'", [appId]);
+  await pool.query('insert into client_sessions (token, application_id) values ($1,$2)', [token, appId]);
+  return token;
+}
+async function validClientSession(token, appId) {
+  if (!token || typeof token !== 'string' || token.length > 100) return false;
+  const { rowCount } = await pool.query("select 1 from client_sessions where token = $1 and application_id = $2 and created_at > now() - interval '30 days'", [token, appId]);
+  return rowCount > 0;
+}
+
 async function listDocs(appId) {
   const { rows } = await pool.query(
     'select id, category, original_name, mimetype, size, uploaded_at from application_documents where application_id = $1 order by uploaded_at asc',
@@ -127,11 +184,24 @@ router.get('/schema', (req, res) => {
 });
 
 // ══ CLIENTE (enlace secreto) ═════════════════════════════════════════════════
+async function resolveLink(req, res) {
+  const a = await findApplicationByToken(req.params.token);
+  if (!a) { res.status(404).json({ error: 'Este enlace no es válido o ya no está activo. Pide uno nuevo a tu asesor.' }); return null; }
+  if (a.purged_at) { res.status(410).json({ error: 'Este trámite ya fue cerrado y, por tu privacidad, tus datos fueron eliminados.' }); return null; }
+  return a;
+}
+// Solo identifica la solicitud por su enlace (sin sesión): para la pantalla de contraseña.
+async function loadLinkOnly(req, res, next) {
+  try { const a = await resolveLink(req, res); if (!a) return; req.application = a; next(); }
+  catch (err) { console.error(err); res.status(500).json({ error: 'Error de servidor. Intenta de nuevo en unos minutos.' }); }
+}
+// Enlace + sesión iniciada con usuario y contraseña.
 async function loadByLink(req, res, next) {
   try {
-    const a = await findApplicationByToken(req.params.token);
-    if (!a) return res.status(404).json({ error: 'Este enlace no es válido o ya no está activo. Pide uno nuevo a tu asesor.' });
-    if (a.purged_at) return res.status(410).json({ error: 'Este trámite ya fue cerrado y, por tu privacidad, tus datos fueron eliminados.' });
+    const a = await resolveLink(req, res); if (!a) return;
+    if (!(await validClientSession(req.headers['x-client-session'], a.id))) {
+      return res.status(401).json({ error: 'Inicia sesión para continuar.', needsLogin: true });
+    }
     req.application = a;
     next();
   } catch (err) {
@@ -139,6 +209,40 @@ async function loadByLink(req, res, next) {
     res.status(500).json({ error: 'Error de servidor. Intenta de nuevo en unos minutos.' });
   }
 }
+
+router.get('/s/:token/hello', loadLinkOnly, pub(async (req, res) => {
+  const a = req.application;
+  res.json({ clientName: a.client_name, username: a.username || '', hasAccess: !!a.pass_hash });
+}));
+
+function checkPassword(a, password) { return !!a.pass_hash && verifyPassword(String(password || ''), a.pass_salt, a.pass_hash); }
+
+router.post('/s/:token/login', loadLinkOnly, pub(async (req, res) => {
+  const a = req.application;
+  const key = req.ip + '|' + a.id;
+  if (lockedOut(key)) return res.status(429).json({ error: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' });
+  if (!checkPassword(a, (req.body || {}).password)) { recordFail(key); return res.status(401).json({ error: 'Contraseña incorrecta' }); }
+  clearFails(key);
+  res.json({ ok: true, session: await startClientSession(a.id) });
+}));
+
+router.post('/client/login', pub(async (req, res) => {
+  const username = String((req.body || {}).username || '').trim().toLowerCase().slice(0, 80);
+  const password = String((req.body || {}).password || '');
+  const key = req.ip + '|' + username;
+  if (lockedOut(key)) return res.status(429).json({ error: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' });
+  const { rows } = await pool.query('select * from applications where lower(username) = $1', [username]);
+  const a = rows[0];
+  if (!a || !checkPassword(a, password)) { recordFail(key); return res.status(401).json({ error: 'Usuario o contraseña incorrectos' }); }
+  if (a.purged_at) return res.status(410).json({ error: 'Este trámite ya fue cerrado y, por tu privacidad, tus datos fueron eliminados.' });
+  clearFails(key);
+  res.json({ ok: true, session: await startClientSession(a.id), linkToken: a.token, clientName: a.client_name });
+}));
+
+router.post('/s/:token/logout', loadByLink, pub(async (req, res) => {
+  await pool.query('delete from client_sessions where token = $1', [req.headers['x-client-session']]);
+  res.json({ ok: true });
+}));
 
 router.get('/s/:token', loadByLink, pub(async (req, res) => {
   const a = req.application;
@@ -335,6 +439,7 @@ function summarize(a, docCount, groupSize) {
     submittedAt: a.submitted_at, lastOpenedAt: a.last_opened_at,
     unread: !!a.submitted_at && (!a.admin_seen_at || new Date(a.admin_seen_at) < new Date(a.submitted_at)),
     groupId: a.group_id || null, groupSize: groupSize || 1,
+    username: a.username || '', hasAccess: !!a.pass_hash,
     appointment: a.appointment || {},
     balance: ops.balance(payments),
     purgeOn: ops.purgeDate(a.appointment), purgedAt: a.purged_at,
@@ -359,7 +464,8 @@ router.post('/admin/applications', auth, wrap(async (req, res) => {
   const token = newToken();
   await pool.query('insert into applications (id, token, client_name, client_note) values ($1,$2,$3,$4)', [id, token, name, note]);
   await pushLog(id, 'link_created', 'Solicitud creada por el administrador');
-  res.json({ ok: true, application: summarize(await findApplicationById(id), 0) });
+  const credentials = await issueCredentials(await findApplicationById(id));
+  res.json({ ok: true, application: summarize(await findApplicationById(id), 0), credentials });
 }));
 
 router.get('/admin/applications/:id', auth, wrap(async (req, res) => {
@@ -408,6 +514,15 @@ router.put('/admin/applications/:id/status', auth, wrap(async (req, res) => {
   await pool.query('update applications set status = $2, status_note = $3, status_updated_at = now() where id = $1', [a.id, status, cleanNote]);
   await pushLog(a.id, 'status_changed', option.label + (cleanNote ? ` — ${cleanNote}` : ''));
   res.json({ ok: true });
+}));
+
+router.post('/admin/applications/:id/credentials', auth, wrap(async (req, res) => {
+  const a = await findApplicationById(req.params.id);
+  if (!a) return res.status(404).json({ error: 'No encontrado' });
+  if (a.purged_at) return res.status(400).json({ error: 'Este trámite ya fue cerrado' });
+  const credentials = await issueCredentials(a);
+  await pushLog(a.id, 'credentials_reset', a.pass_hash ? 'Contraseña restablecida por el administrador' : 'Acceso del cliente creado');
+  res.json({ ok: true, credentials });
 }));
 
 router.post('/admin/applications/:id/regenerate-link', auth, wrap(async (req, res) => {
@@ -507,7 +622,8 @@ router.post('/admin/applications/:id/duplicate', auth, wrap(async (req, res) => 
   );
   await pushLog(id, 'link_created', `Agregado al grupo de ${src.client_name} (se copiaron ${Object.keys(data).length} datos)`);
   await pushLog(src.id, 'group_member_added', `Se agregó a ${name} al grupo`);
-  res.json({ ok: true, application: summarize(await findApplicationById(id), 0, 2) });
+  const credentials = await issueCredentials(await findApplicationById(id));
+  res.json({ ok: true, application: summarize(await findApplicationById(id), 0, 2), credentials });
 }));
 
 // ── Resumen del día, reportes y ajustes ──────────────────────────────────────

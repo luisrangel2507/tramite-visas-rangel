@@ -151,16 +151,19 @@
       <div id="d-purged" class="msg err hidden"></div>
 
       <div class="card no-print acc" data-acc="link">
-        <button class="acc-hd" type="button"><span>Enlace para el cliente</span><i id="d-privacy" class="mini"></i></button>
+        <button class="acc-hd" type="button"><span>Acceso del cliente</span><i id="d-privacy" class="mini"></i></button>
         <div class="acc-bd">
+          <div id="d-cred"></div>
+          <div class="lbl-sm">Enlace personal</div>
           <div class="link-url" id="d-link"></div>
           <div class="link-actions">
             <button class="btn btn-sm btn-primary" id="d-copy">Copiar enlace</button>
             <button class="btn btn-sm btn-wa" id="d-wa">Enviar por WhatsApp</button>
             <button class="btn btn-sm" id="d-remind">Recordar avance</button>
+            <button class="btn btn-sm" id="d-reset">Restablecer contraseña</button>
             <button class="btn btn-sm" id="d-regen">Generar enlace nuevo</button>
           </div>
-          <div class="hint">Quien tenga el enlace puede ver y editar esta solicitud. “Generar enlace nuevo” invalida el anterior.</div>
+          <div class="hint">El cliente entra con su <b>usuario y contraseña</b> (en <b>/entrar</b> o abriendo su enlace). La contraseña solo se muestra al crearla o restablecerla. “Generar enlace nuevo” invalida el enlace anterior.</div>
         </div>
       </div>
 
